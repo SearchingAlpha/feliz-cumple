@@ -1,31 +1,39 @@
-"use client";
+'use client';
 
 import { useState, useEffect } from 'react';
 import { Heart, Gift, Trophy } from 'lucide-react';
-
-// This component needs client-side features
-// use client
+import '../globals.css';
 
 // Custom Pixel Button component
-const PixelButton = ({ onClick, color, children, completed, disabled }) => {
+const PixelButton = ({ onClick, color, children, completed, disabled, size = "normal" }) => {
   return (
     <button
       onClick={onClick}
       disabled={disabled}
       className={`
-        relative px-6 py-3 font-pixel text-white 
+        relative font-pixel text-white 
         transition-all duration-200 
         ${color} 
         border-b-4 border-r-4 
         ${completed ? 'border-green-700 bg-green-500' : 'border-opacity-50 border-black'} 
         ${disabled ? 'opacity-70 cursor-not-allowed' : 'hover:translate-y-1 hover:border-b-2 active:translate-y-2 active:border-b-0'}
+        ${size === "small" ? 'px-3 py-1 text-xs' : 'px-6 py-3'}
+        rounded-xl
         before:absolute before:top-0 before:left-0 before:w-full before:h-full
         before:border-2 before:border-white before:border-opacity-20
       `}
     >
       <div className="flex items-center justify-center gap-2">
         {children}
-        {completed && <Trophy size={16} className="ml-1 animate-pulse" />}
+        {completed && size !== "small" && <Trophy size={16} className="ml-1 animate-pulse" />}
+      </div>
+      
+      {/* Pixel-style decoration */}
+      <div className="absolute inset-0 flex items-end justify-start overflow-hidden opacity-20">
+        <div className="h-2 w-2 bg-white"></div>
+      </div>
+      <div className="absolute inset-0 flex items-end justify-end overflow-hidden opacity-20">
+        <div className="h-2 w-2 bg-white"></div>
       </div>
     </button>
   );
@@ -47,7 +55,7 @@ const PresentBox = ({ unlocked, title, content }) => {
       className={`
         relative w-full p-4 rounded-lg cursor-pointer transition-all
         ${unlocked ? 'bg-pink-100 hover:bg-pink-200' : 'bg-gray-200'}
-        border-2 border-dashed ${unlocked ? 'border-pink-400' : 'border-gray-400'}
+        border-3 border-dashed ${unlocked ? 'border-pink-400' : 'border-gray-400'}
       `}
     >
       <div className="flex items-center gap-2 mb-2">
@@ -63,6 +71,12 @@ const PresentBox = ({ unlocked, title, content }) => {
       {unlocked && isOpen && (
         <div className="mt-3 p-3 bg-white rounded-md border border-pink-300 font-pixel text-sm animate-fadeIn">
           <p>{content}</p>
+          
+          {/* Pixelated corners for retro feel */}
+          <div className="absolute left-2 top-2 h-1 w-1 bg-pink-300 opacity-30"></div>
+          <div className="absolute right-2 top-2 h-1 w-1 bg-pink-300 opacity-30"></div>
+          <div className="absolute bottom-2 left-2 h-1 w-1 bg-pink-300 opacity-30"></div>
+          <div className="absolute bottom-2 right-2 h-1 w-1 bg-pink-300 opacity-30"></div>
         </div>
       )}
       
@@ -119,6 +133,26 @@ const GamingHub = () => {
       setGameState(newGameState);
     }
   };
+  
+  // Function to reset a game's completion status
+  const resetGame = (game) => {
+    if (window.confirm(`Are you sure you want to reset the ${game} game?`)) {
+      const newGameState = { ...gameState };
+      newGameState[game] = false;
+      setGameState(newGameState);
+    }
+  };
+
+  // Function to reset all games
+  const resetAllGames = () => {
+    if (window.confirm('Are you sure you want to reset all game progress?')) {
+      setGameState({
+        flowerMatch: false,
+        cupcakeCatch: false,
+        heartJump: false
+      });
+    }
+  };
 
   // Calculate total progress
   const completedGames = Object.values(gameState).filter(Boolean).length;
@@ -126,35 +160,86 @@ const GamingHub = () => {
   const progressPercentage = (completedGames / totalGames) * 100;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-100 to-pink-100">
-      {/* Decorative elements */}
-      <div className="fixed inset-0 pointer-events-none">
-        <PixelHeart size="w-6 h-6" color="bg-pink-300" />
-        <PixelStar size="w-8 h-8" color="bg-yellow-200" />
-        <PixelHeart size="w-4 h-4" color="bg-pink-400" />
-        <PixelStar size="w-5 h-5" color="bg-purple-200" />
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Pixel Background */}
+      <div className="fixed inset-0 z-0">
+        {/* Gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-b from-fuchsia-100 to-pink-100"></div>
+        
+        {/* Pixelated grid overlay */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="h-full w-full bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmFlZGEiIHN0cm9rZS1vcGFjaXR5PSIwLjQiLz48L3N2Zz4=')]"></div>
+        </div>
+        
+        {/* Pixelated decorative elements */}
+        <div className="absolute top-20 left-20 h-16 w-16 rounded-md bg-gradient-to-br from-pink-300 to-pink-400 opacity-40 blur-sm"></div>
+        <div className="absolute bottom-40 right-20 h-24 w-24 rounded-full bg-gradient-to-br from-purple-300 to-fuchsia-300 opacity-30 blur-sm"></div>
+        <div className="absolute bottom-20 left-1/4 h-12 w-12 rounded-full bg-gradient-to-br from-pink-200 to-pink-300 opacity-40 blur-sm"></div>
+        <div className="absolute top-1/3 right-1/4 h-20 w-20 rounded-full bg-gradient-to-br from-fuchsia-200 to-purple-300 opacity-30 blur-sm"></div>
+        
+        {/* Heart decorations */}
+        <div className="absolute top-10 right-10 h-8 w-8 opacity-40">
+          <svg viewBox="0 0 24 24" fill="currentColor" className="text-pink-400">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+          </svg>
+        </div>
+        <div className="absolute bottom-16 left-12 h-6 w-6 opacity-40">
+          <svg viewBox="0 0 24 24" fill="currentColor" className="text-pink-400">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+          </svg>
+        </div>
+        <div className="absolute top-1/3 left-1/3 h-5 w-5 opacity-30">
+          <svg viewBox="0 0 24 24" fill="currentColor" className="text-pink-300">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+          </svg>
+        </div>
+        
+        {/* Sparkles */}
+        <div className="absolute top-1/4 right-1/3 h-2 w-2 animate-pulse rounded-full bg-yellow-200 opacity-60"></div>
+        <div className="absolute bottom-1/3 right-1/4 h-1.5 w-1.5 animate-pulse rounded-full bg-yellow-200 opacity-60"></div>
+        <div className="absolute top-1/2 left-1/5 h-2.5 w-2.5 animate-pulse rounded-full bg-yellow-200 opacity-50"></div>
       </div>
       
-      <div className="container mx-auto px-4 py-12 max-w-4xl">
+      <div className="container mx-auto px-4 py-12 max-w-4xl relative z-10">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-pixel text-purple-700 mb-4 tracking-wide">
+          <h1 className="text-4xl md:text-5xl font-pixel text-purple-700 mb-4 tracking-wide drop-shadow-[0_2px_0_rgba(255,105,180,0.7)]">
             Retro Gaming Hub
           </h1>
           <p className="font-pixel text-pink-600 text-lg">Your special adventure awaits!</p>
           
+          <div className="flex justify-center mt-4">
+            {completedGames > 0 && (
+              <PixelButton
+                onClick={resetAllGames}
+                color="bg-pink-700"
+                size="small"
+              >
+                Reset All Progress
+              </PixelButton>
+            )}
+          </div>
+          
           {/* Progress bar */}
-          <div className="mt-6 w-full bg-gray-200 rounded-full h-6 border-2 border-purple-300">
+          <div className="mt-6 w-full bg-white rounded-full h-6 border-4 border-pink-300">
             <div 
               className="bg-gradient-to-r from-pink-400 to-purple-500 h-full rounded-full transition-all duration-500 flex items-center justify-center text-xs font-pixel text-white"
               style={{ width: `${progressPercentage}%` }}
             >
-              {completedGames}/{totalGames}
+              <div className="flex h-full w-full">
+                {[...Array(20)].map((_, i) => (
+                  <div 
+                    key={i}
+                    className={`h-full flex-1 ${i % 2 === 0 ? 'bg-pink-300' : 'bg-pink-400'} opacity-30`}
+                  />
+                ))}
+              </div>
+              <span className="absolute">{completedGames}/{totalGames}</span>
             </div>
           </div>
         </div>
         
-        {/* Main content */}
+                  {/* Main content */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Game selection */}
           <div className="md:col-span-2 bg-white rounded-xl p-6 shadow-lg border-4 border-purple-300">
@@ -176,13 +261,24 @@ const GamingHub = () => {
                       <p className="text-sm text-pink-500">Memory game with pixelated flowers</p>
                     </div>
                   </div>
-                  <PixelButton 
-                    onClick={() => navigateToGame('flowerMatch')}
-                    color="bg-pink-500"
-                    completed={gameState.flowerMatch}
-                  >
-                    {gameState.flowerMatch ? 'Completed' : 'Play Now'}
-                  </PixelButton>
+                  <div className="flex flex-col md:flex-row gap-2">
+                    {gameState.flowerMatch && (
+                      <PixelButton 
+                        onClick={() => resetGame('flowerMatch')}
+                        color="bg-gray-500"
+                        size="small"
+                      >
+                        Reset
+                      </PixelButton>
+                    )}
+                    <PixelButton 
+                      onClick={() => navigateToGame('flowerMatch')}
+                      color="bg-pink-500"
+                      completed={gameState.flowerMatch}
+                    >
+                      {gameState.flowerMatch ? 'Completed' : 'Play Now'}
+                    </PixelButton>
+                  </div>
                 </div>
               </div>
               
@@ -198,13 +294,24 @@ const GamingHub = () => {
                       <p className="text-sm text-purple-500">Catch falling treats, avoid bombs</p>
                     </div>
                   </div>
-                  <PixelButton 
-                    onClick={() => navigateToGame('cupcakeCatch')}
-                    color="bg-purple-500"
-                    completed={gameState.cupcakeCatch}
-                  >
-                    {gameState.cupcakeCatch ? 'Completed' : 'Play Now'}
-                  </PixelButton>
+                  <div className="flex flex-col md:flex-row gap-2">
+                    {gameState.cupcakeCatch && (
+                      <PixelButton 
+                        onClick={() => resetGame('cupcakeCatch')}
+                        color="bg-gray-500"
+                        size="small"
+                      >
+                        Reset
+                      </PixelButton>
+                    )}
+                    <PixelButton 
+                      onClick={() => navigateToGame('cupcakeCatch')}
+                      color="bg-purple-500"
+                      completed={gameState.cupcakeCatch}
+                    >
+                      {gameState.cupcakeCatch ? 'Completed' : 'Play Now'}
+                    </PixelButton>
+                  </div>
                 </div>
               </div>
               
@@ -220,13 +327,24 @@ const GamingHub = () => {
                       <p className="text-sm text-red-400">Platform game to collect hearts</p>
                     </div>
                   </div>
-                  <PixelButton 
-                    onClick={() => navigateToGame('heartJump')}
-                    color="bg-red-400"
-                    completed={gameState.heartJump}
-                  >
-                    {gameState.heartJump ? 'Completed' : 'Play Now'}
-                  </PixelButton>
+                  <div className="flex flex-col md:flex-row gap-2">
+                    {gameState.heartJump && (
+                      <PixelButton 
+                        onClick={() => resetGame('heartJump')}
+                        color="bg-gray-500"
+                        size="small"
+                      >
+                        Reset
+                      </PixelButton>
+                    )}
+                    <PixelButton 
+                      onClick={() => navigateToGame('heartJump')}
+                      color="bg-red-400"
+                      completed={gameState.heartJump}
+                    >
+                      {gameState.heartJump ? 'Completed' : 'Play Now'}
+                    </PixelButton>
+                  </div>
                 </div>
               </div>
             </div>
@@ -264,115 +382,16 @@ const GamingHub = () => {
       
       {/* Footer */}
       <div className="mt-12 py-4 text-center font-pixel text-sm text-pink-500">
-        Made with ♥ just for you!
+        <span className="relative">
+          Made with 
+          <svg className="inline-block w-4 h-4 mx-1 text-pink-500 animate-pulse" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+          </svg>
+          just for you!
+        </span>
       </div>
       
-      {/* CSS for pixel art elements */}
-      <style jsx>{`
-        @font-face {
-          font-family: 'PixelFont';
-          src: url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-        }
-        
-        .font-pixel {
-          font-family: 'PixelFont', monospace;
-          letter-spacing: 1px;
-        }
-        
-        .pixel-heart {
-          position: absolute;
-          clip-path: polygon(
-            50% 0%, 65% 15%, 85% 15%, 100% 30%, 100% 60%, 
-            85% 75%, 65% 85%, 50% 100%, 35% 85%, 15% 75%, 
-            0% 60%, 0% 30%, 15% 15%, 35% 15%
-          );
-          top: 15%;
-          left: 10%;
-        }
-        
-        .pixel-star {
-          position: absolute;
-          clip-path: polygon(
-            50% 0%, 61% 35%, 98% 35%, 68% 57%, 
-            79% 91%, 50% 70%, 21% 91%, 32% 57%, 
-            2% 35%, 39% 35%
-          );
-          top: 30%;
-          right: 15%;
-        }
-        
-        .pixel-flower {
-          background-color: #F472B6;
-          position: relative;
-          border-radius: 50%;
-        }
-        
-        .pixel-flower:before, .pixel-flower:after {
-          content: '';
-          position: absolute;
-          background-color: #F472B6;
-          border-radius: 50%;
-          width: 50%;
-          height: 50%;
-        }
-        
-        .pixel-flower:before {
-          top: -25%;
-          left: 25%;
-        }
-        
-        .pixel-flower:after {
-          bottom: -25%;
-          left: 25%;
-        }
-        
-        .pixel-cupcake {
-          background-color: #C084FC;
-          position: relative;
-          clip-path: polygon(
-            0% 50%, 0% 100%, 100% 100%, 100% 50%,
-            80% 50%, 80% 20%, 65% 10%, 35% 10%, 20% 20%, 20% 50%
-          );
-        }
-        
-        .pixel-cupcake:before {
-          content: '';
-          position: absolute;
-          background-color: #F9A8D4;
-          width: 20%;
-          height: 20%;
-          top: 5%;
-          left: 40%;
-          border-radius: 50%;
-        }
-        
-        .animate-float {
-          animation: float 6s ease-in-out infinite;
-        }
-        
-        .animate-spin-slow {
-          animation: spin 12s linear infinite;
-        }
-        
-        .animate-fadeIn {
-          animation: fadeIn 0.5s ease-in-out;
-        }
-        
-        @keyframes float {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-20px); }
-        }
-        
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-        
-        @keyframes fadeIn {
-          0% { opacity: 0; }
-          100% { opacity: 1; }
-        }
-      `}</style>
+      {/* No inline styles needed as they've been moved to global.css */}
     </div>
   );
 };
