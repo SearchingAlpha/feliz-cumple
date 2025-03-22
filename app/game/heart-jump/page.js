@@ -1,12 +1,12 @@
 'use client';
 
-// app/game/pixel-flower-match/page.js
+// app/game/heart-jump/page.js
 import { Suspense, useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 
 // Import the game component dynamically
-const PixelFlowerMatch = dynamic(() => import('@/components/PixelFlowerMatch'), {
+const HeartJump = dynamic(() => import('@/components/HeartJump'), {
   ssr: false,
   loading: () => <LoadingGame />
 });
@@ -16,7 +16,7 @@ function LoadingGame() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen">
       <div className="pixel-loading mb-4"></div>
-      <p className="font-pixel text-pink-600">Loading Pixel Flower Match...</p>
+      <p className="font-pixel text-red-600">Loading Heart Jump...</p>
     </div>
   );
 }
@@ -29,8 +29,6 @@ function AuthCheck({ children }) {
   
   useEffect(() => {
     // Check if user is authenticated
-    console.log("Checking authentication in game route");
-    
     try {
       // First check localStorage
       let isAuthenticated = localStorage.getItem('isAuthenticated');
@@ -39,7 +37,6 @@ function AuthCheck({ children }) {
       if (isAuthenticated !== 'true') {
         const tempAuth = sessionStorage.getItem('tempAuthState');
         if (tempAuth === 'true') {
-          console.log("Found authentication in session storage, restoring");
           localStorage.setItem('isAuthenticated', 'true');
           isAuthenticated = 'true';
           // Clear the temporary storage
@@ -47,13 +44,9 @@ function AuthCheck({ children }) {
         }
       }
       
-      console.log("Final authentication status:", isAuthenticated);
-      
       if (isAuthenticated === 'true') {
-        console.log("Authentication confirmed");
         setAuthenticated(true);
       } else {
-        console.log("Not authenticated, will redirect to landing page");
         // Use a timeout to ensure we don't redirect during render
         setTimeout(() => {
           router.push('/');
@@ -79,14 +72,13 @@ function AuthCheck({ children }) {
   return authenticated ? children : <LoadingGame />;
 }
 
-// Component to directly initialize game state when you access the game
+// Component to directly initialize game state
 function GameStateInitializer() {
   useEffect(() => {
     // Ensure the gameState structure exists in localStorage
     try {
       const gameState = localStorage.getItem('gameState');
       if (!gameState) {
-        // If no gameState exists, initialize it
         localStorage.setItem('gameState', JSON.stringify({
           flowerMatch: false,
           cupcakeCatch: false,
@@ -101,13 +93,13 @@ function GameStateInitializer() {
   return null;
 }
 
-export default function PixelFlowerMatchPage() {
+export default function HeartJumpPage() {
   return (
     <AuthCheck>
       <GameStateInitializer />
       <main>
         <Suspense fallback={<LoadingGame />}>
-          <PixelFlowerMatch />
+          <HeartJump />
         </Suspense>
       </main>
     </AuthCheck>

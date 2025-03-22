@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import GameCompletion from '@/components/GameCompletion';
+import '../app/globals.css';
 
 // Flower colors for the pixel art flowers
 const FLOWER_COLORS = [
@@ -71,11 +73,16 @@ export default function PixelFlowerMatch() {
   useEffect(() => {
     initializeGame();
     
-    // Check if the game was already completed
-    const gameState = JSON.parse(localStorage.getItem('gameState') || '{}');
-    if (gameState.flowerMatch) {
-      // If the game is already completed, we don't need to reset it
-      // This prevents resetting progress if the user navigates back to the game
+    // Check if the game was already completed in localStorage
+    try {
+      const gameState = JSON.parse(localStorage.getItem('gameState') || '{}');
+      if (gameState.flowerMatch) {
+        // If the game is already completed in storage, we'll automatically mark it completed
+        // This way, returning to a completed game shows it as completed
+        setGameCompleted(true);
+      }
+    } catch (error) {
+      console.error("Error checking game completion status:", error);
     }
   }, []);
 
@@ -103,11 +110,11 @@ export default function PixelFlowerMatch() {
 
   // Check if game is completed
   useEffect(() => {
+    // Only trigger completion logic if all pairs are matched and game isn't already marked as completed
     if (matchedPairs.length === FLOWER_COLORS.length / 2 && !gameCompleted) {
       const timer = setTimeout(() => {
         setGameCompleted(true);
-        // Save game completion
-        saveGameCompletion();
+        // Note: saveGameCompletion is now handled by the GameCompletion component
       }, 1000);
       return () => clearTimeout(timer);
     }
@@ -140,30 +147,9 @@ export default function PixelFlowerMatch() {
     setFlippedIndices(prev => [...prev, index]);
   }
 
-  // Save game completion to localStorage and ensure it's visible in the hub
-  async function saveGameCompletion() {
-    try {
-      // Update the game state in localStorage to match the format used in the hub
-      const gameState = JSON.parse(localStorage.getItem('gameState') || '{"flowerMatch":false,"cupcakeCatch":false,"heartJump":false}');
-      gameState.flowerMatch = true;
-      localStorage.setItem('gameState', JSON.stringify(gameState));
-      
-      console.log("Game completion saved:", gameState);
-      
-      // In a real implementation, you would call your Node.js backend
-      // await fetch('/api/games/complete', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ game: 'flowerMatch' })
-      // });
-    } catch (error) {
-      console.error('Failed to save game completion:', error);
-    }
-  }
+  // Note: Game completion is now handled by the GameCompletion component
 
-  function returnToHub() {
-    router.push('/hub');
-  }
+  // Note: Returning to hub is now handled by the GameCompletion component
 
   // Add some celebratory particles when the game is completed
   function CelebrationEffect() {
@@ -197,29 +183,13 @@ export default function PixelFlowerMatch() {
         </div>
 
         {gameCompleted ? (
-          <div className="text-center bg-white p-6 rounded-lg shadow-lg">
-            <div className="text-xl font-bold text-pink-600 mb-2 font-pixel">🎉 You Won! 🎉</div>
-            <p className="text-pink-500 mb-4">You found all the matching flowers in {moves} moves!</p>
-            <div className="flex justify-center space-x-4">
-              <button 
-                onClick={() => {
-                  // Only reinitialize the game, but keep completion status
-                  initializeGame();
-                  // Immediately mark as completed so the hub shows it correctly
-                  saveGameCompletion();
-                }}
-                className="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition font-pixel"
-              >
-                Play Again
-              </button>
-              <button 
-                onClick={returnToHub}
-                className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition font-pixel"
-              >
-                Return to Hub
-              </button>
-            </div>
-          </div>
+          <GameCompletion
+            gameId="flowerMatch"
+            score={moves}
+            scoreLabel="Moves"
+            customMessage="Great job! You found all the matching flowers!"
+            onRestart={initializeGame}
+          />
         ) : (
           <div className="grid grid-cols-3 md:grid-cols-4 gap-2 bg-white p-4 rounded-lg shadow-lg">
             {cards.map((color, index) => (
