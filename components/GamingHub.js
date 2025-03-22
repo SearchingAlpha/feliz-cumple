@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Heart, Gift, Trophy } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import '../app/globals.css';
+import { getGameState, resetGame, resetAllGames } from '@/lib/gameState';
 
 // Custom Pixel Button component
 const PixelButton = ({ onClick, color, children, completed, disabled, size = "normal" }) => {
@@ -111,84 +112,47 @@ const GamingHub = () => {
     heartJump: false
   });
 
-  // Load game state from localStorage on component mount and when game state changes
+  // Simplified game state loading with the utility function
   useEffect(() => {
+    // Function to load game state
     function loadGameState() {
-      try {
-        console.log("Loading game state in GamingHub");
-        
-        // Check for the game state updated flag
-        const wasUpdated = localStorage.getItem('gameStateUpdated');
-        
-        // Check for backup in sessionStorage
-        const backupState = sessionStorage.getItem('gameStateBackup');
-        
-        if (wasUpdated === 'true' && backupState) {
-          console.log("Using backup state from sessionStorage");
-          const parsedBackup = JSON.parse(backupState);
-          setGameState(parsedBackup);
-          
-          // Clear the flags
-          localStorage.removeItem('gameStateUpdated');
-          sessionStorage.removeItem('gameStateBackup');
-          
-          // Update localStorage with backup for consistency
-          localStorage.setItem('gameState', backupState);
-        } else {
-          // Regular flow - get from localStorage
-          const savedState = localStorage.getItem('gameState');
-          console.log("Loaded from localStorage:", savedState);
-          
-          if (savedState) {
-            const parsedState = JSON.parse(savedState);
-            setGameState(parsedState);
-          } else {
-            // Initialize with default state if none exists
-            const defaultState = {
-              flowerMatch: false,
-              cupcakeCatch: false,
-              heartJump: false
-            };
-            setGameState(defaultState);
-            localStorage.setItem('gameState', JSON.stringify(defaultState));
-          }
-        }
-      } catch (error) {
-        console.error("Error loading game state:", error);
-      }
+      const state = getGameState();
+      console.log("Loading game state:", state);
+      setGameState(state);
     }
-  
-    // Load initial state
+    
+    // Load game state initially
     loadGameState();
     
-    // Set up interval to periodically check for changes
-    const intervalId = setInterval(() => {
-      try {
-        // Check for the game state updated flag
-        const wasUpdated = localStorage.getItem('gameStateUpdated');
-        if (wasUpdated === 'true') {
-          console.log("Detected game state update flag");
-          loadGameState();
-        }
-      } catch (error) {
-        console.error("Error checking for updates:", error);
+    // Set up event listeners
+    function handleVisibilityChange() {
+      if (document.visibilityState === 'visible') {
+        console.log("Page became visible, reloading game state");
+        loadGameState();
       }
-    }, 1000);
+    }
     
-    // Listen for focus events to reload state when tab regains focus
-    window.addEventListener('focus', loadGameState);
+    function handleStorageChange(event) {
+      if (event.key === 'gameState' || event.key === 'forceRefresh') {
+        console.log("Storage changed, reloading game state");
+        loadGameState();
+      }
+    }
+    
+    // Add event listeners
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also set up an interval to periodically check for changes
+    const intervalId = setInterval(loadGameState, 1000);
     
     // Clean up
     return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('storage', handleStorageChange);
       clearInterval(intervalId);
-      window.removeEventListener('focus', loadGameState);
     };
   }, []);
-
-  // Save game state to localStorage when it changes
-  useEffect(() => {
-    localStorage.setItem('gameState', JSON.stringify(gameState));
-  }, [gameState]);
 
   // Function to navigate to a game
   const navigateToGame = (game) => {
@@ -224,17 +188,22 @@ const GamingHub = () => {
   };
   
   // Function to reset a game's completion status
-  const resetGame = (game) => {
+  const resetGameHandler = (game) => {
     if (window.confirm(`Are you sure you want to reset the ${game} game?`)) {
-      const newGameState = { ...gameState };
-      newGameState[game] = false;
-      setGameState(newGameState);
+      resetGame(game);
+      // Update the local state immediately for UI responsiveness
+      setGameState(prev => ({
+        ...prev,
+        [game]: false
+      }));
     }
   };
 
   // Function to reset all games
-  const resetAllGames = () => {
+  const resetAllGamesHandler = () => {
     if (window.confirm('Are you sure you want to reset all game progress?')) {
+      resetAllGames();
+      // Update the local state
       setGameState({
         flowerMatch: false,
         cupcakeCatch: false,
@@ -300,7 +269,7 @@ const GamingHub = () => {
           <div className="flex justify-center mt-4">
             {completedGames > 0 && (
               <PixelButton
-                onClick={resetAllGames}
+                onClick={resetAllGamesHandler}
                 color="bg-pink-700"
                 size="small"
               >
@@ -353,7 +322,7 @@ const GamingHub = () => {
                   <div className="flex flex-col md:flex-row gap-2">
                     {gameState.flowerMatch && (
                       <PixelButton 
-                        onClick={() => resetGame('flowerMatch')}
+                        onClick={() => resetGameHandler('flowerMatch')}
                         color="bg-gray-500"
                         size="small"
                       >
@@ -386,7 +355,7 @@ const GamingHub = () => {
                   <div className="flex flex-col md:flex-row gap-2">
                     {gameState.cupcakeCatch && (
                       <PixelButton 
-                        onClick={() => resetGame('cupcakeCatch')}
+                        onClick={() => resetGameHandler('cupcakeCatch')}
                         color="bg-gray-500"
                         size="small"
                       >
@@ -398,7 +367,7 @@ const GamingHub = () => {
                       color="bg-purple-500"
                       completed={gameState.cupcakeCatch}
                     >
-                      {gameState.cupcakeCatch ? 'Completed' : 'Play Now'}
+                      {gameState.cupcakeCatch ? 'Play Again' : 'Play Now'}
                     </PixelButton>
                   </div>
                 </div>
@@ -419,7 +388,7 @@ const GamingHub = () => {
                   <div className="flex flex-col md:flex-row gap-2">
                     {gameState.heartJump && (
                       <PixelButton 
-                        onClick={() => resetGame('heartJump')}
+                        onClick={() => resetGameHandler('heartJump')}
                         color="bg-gray-500"
                         size="small"
                       >
@@ -431,7 +400,7 @@ const GamingHub = () => {
                       color="bg-red-400"
                       completed={gameState.heartJump}
                     >
-                      {gameState.heartJump ? 'Completed' : 'Play Now'}
+                      {gameState.heartJump ? 'Play Again' : 'Play Now'}
                     </PixelButton>
                   </div>
                 </div>

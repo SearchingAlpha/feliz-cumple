@@ -1,9 +1,14 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { Trophy } from 'lucide-react';
-import { useEffect } from 'react';
+import { markGameAsCompleted } from '@/lib/gameState';
+import '../app/globals.css';
 
+/**
+ * GameCompletion component using the utility function
+ */
 export default function GameCompletion({
   gameId,
   score,
@@ -12,76 +17,34 @@ export default function GameCompletion({
   customMessage
 }) {
   const router = useRouter();
-  
-  // Debug log the game ID to make sure it's correct
-  useEffect(() => {
-    console.log(`Game completion mounted for: ${gameId}`);
-    
-    try {
-      const currentState = localStorage.getItem('gameState');
-      console.log('Current game state:', currentState);
-    } catch (error) {
-      console.error('Error reading game state:', error);
-    }
-  }, [gameId]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
   
   // Handle marking the game as completed
   const handleMarkAsCompleted = () => {
+    setIsSaving(true);
+    setSaveError('');
+    
     try {
-      console.log(`Marking game ${gameId} as completed`);
+      // Use the utility function to mark the game as completed
+      const success = markGameAsCompleted(gameId);
       
-      // Define the default state
-      const defaultState = {
-        flowerMatch: false,
-        cupcakeCatch: false,
-        heartJump: false
-      };
-      
-      // Get the current state
-      let gameState;
-      try {
-        const savedState = localStorage.getItem('gameState');
-        console.log('Retrieved game state:', savedState);
-        
-        if (savedState) {
-          gameState = JSON.parse(savedState);
-        } else {
-          console.log('No existing game state found, using default');
-          gameState = defaultState;
-        }
-      } catch (error) {
-        console.error('Error parsing game state, using default:', error);
-        gameState = defaultState;
+      if (success) {
+        // Add a small delay before navigation
+        setTimeout(() => {
+          router.push('/hub');
+        }, 100);
+      } else {
+        setSaveError('Failed to save progress. Please try again.');
       }
-      
-      // Mark this game as completed
-      gameState[gameId] = true;
-      console.log('Updated game state:', gameState);
-      
-      // Save back to localStorage
-      const stringifiedState = JSON.stringify(gameState);
-      localStorage.setItem('gameState', stringifiedState);
-      console.log('Saved game state to localStorage:', stringifiedState);
-      
-      // CRITICAL: Force a global flag to be checked on hub page load
-      localStorage.setItem('gameStateUpdated', 'true');
-      
-      // Also store in sessionStorage as backup
-      sessionStorage.setItem('gameStateBackup', stringifiedState);
-      console.log('Backup saved to sessionStorage');
-      
-      // Delay navigation slightly to ensure storage is updated
-      setTimeout(() => {
-        console.log('Navigating to hub...');
-        router.push('/hub');
-      }, 200);
-      
     } catch (error) {
-      console.error('Failed to save game completion:', error);
-      alert('There was an error saving your progress. Please try again.');
+      console.error('Error saving game completion:', error);
+      setSaveError('An unexpected error occurred. Please try again.');
+    } finally {
+      setIsSaving(false);
     }
   };
-  
+
   // Default victory message
   const defaultMessage = "Congratulations! You've completed the game!";
   
@@ -105,6 +68,13 @@ export default function GameCompletion({
           <p className="text-pink-600 font-pixel">
             {scoreLabel}: <span className="text-lg">{score}</span>
           </p>
+        </div>
+      )}
+      
+      {/* Show error message if there was an error */}
+      {saveError && (
+        <div className="mb-4 p-2 bg-red-100 rounded-md">
+          <p className="text-red-600 text-sm">{saveError}</p>
         </div>
       )}
       
@@ -134,6 +104,7 @@ export default function GameCompletion({
                     border-b-4 border-r-4 border-opacity-50 border-black
                     hover:translate-y-1 hover:border-b-2 active:translate-y-2 active:border-b-0
                     font-pixel text-sm transition-all duration-200"
+          disabled={isSaving}
         >
           Restart
         </button>
@@ -144,8 +115,9 @@ export default function GameCompletion({
                     border-b-4 border-r-4 border-opacity-50 border-black
                     hover:translate-y-1 hover:border-b-2 active:translate-y-2 active:border-b-0
                     font-pixel text-sm transition-all duration-200"
+          disabled={isSaving}
         >
-          Mark as Completed
+          {isSaving ? 'Saving...' : 'Mark as Completed'}
         </button>
       </div>
     </div>
