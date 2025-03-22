@@ -1,107 +1,20 @@
-'use client';
+// app/games/heart-jump/page.js
+import { Suspense } from 'react';
+import HeartJumpGameWrapper from '@/components/HeartJumpGameWrapper';
 
-// app/game/heart-jump/page.js
-import { Suspense, useEffect, useState } from 'react';
-import dynamic from 'next/dynamic';
-import { useRouter } from 'next/navigation';
-
-// Import the game component dynamically
-const HeartJump = dynamic(() => import('@/components/HeartJump'), {
-  ssr: false,
-  loading: () => <LoadingGame />
-});
-
-// Simple loading component
-function LoadingGame() {
+function HeartJumpPage() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen">
-      <div className="pixel-loading mb-4"></div>
-      <p className="font-pixel text-red-600">Loading Heart Jump...</p>
-    </div>
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-pink-200 to-purple-200">
+        <div className="text-center p-8 bg-white rounded-lg shadow-lg border-4 border-purple-400">
+          <h2 className="text-2xl font-bold mb-4 text-pink-600">Loading Game...</h2>
+          <div className="w-16 h-16 border-4 border-pink-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+        </div>
+      </div>
+    }>
+      <HeartJumpGameWrapper />
+    </Suspense>
   );
 }
 
-// Authentication check component with safer redirect
-function AuthCheck({ children }) {
-  const router = useRouter();
-  const [authenticated, setAuthenticated] = useState(false);
-  const [checking, setChecking] = useState(true);
-  
-  useEffect(() => {
-    // Check if user is authenticated
-    try {
-      // First check localStorage
-      let isAuthenticated = localStorage.getItem('isAuthenticated');
-      
-      // If not found in localStorage, check sessionStorage for temporary state
-      if (isAuthenticated !== 'true') {
-        const tempAuth = sessionStorage.getItem('tempAuthState');
-        if (tempAuth === 'true') {
-          localStorage.setItem('isAuthenticated', 'true');
-          isAuthenticated = 'true';
-          // Clear the temporary storage
-          sessionStorage.removeItem('tempAuthState');
-        }
-      }
-      
-      if (isAuthenticated === 'true') {
-        setAuthenticated(true);
-      } else {
-        // Use a timeout to ensure we don't redirect during render
-        setTimeout(() => {
-          router.push('/');
-        }, 0);
-      }
-    } catch (error) {
-      console.error("Authentication check error:", error);
-      // On error, redirect to be safe
-      setTimeout(() => {
-        router.push('/');
-      }, 0);
-    } finally {
-      setChecking(false);
-    }
-  }, [router]);
-  
-  // Return a loading state while checking auth
-  if (checking) {
-    return <LoadingGame />;
-  }
-  
-  // Only render children if authenticated
-  return authenticated ? children : <LoadingGame />;
-}
-
-// Component to directly initialize game state
-function GameStateInitializer() {
-  useEffect(() => {
-    // Ensure the gameState structure exists in localStorage
-    try {
-      const gameState = localStorage.getItem('gameState');
-      if (!gameState) {
-        localStorage.setItem('gameState', JSON.stringify({
-          flowerMatch: false,
-          cupcakeCatch: false,
-          heartJump: false
-        }));
-      }
-    } catch (error) {
-      console.error("Error initializing game state:", error);
-    }
-  }, []);
-
-  return null;
-}
-
-export default function HeartJumpPage() {
-  return (
-    <AuthCheck>
-      <GameStateInitializer />
-      <main>
-        <Suspense fallback={<LoadingGame />}>
-          <HeartJump />
-        </Suspense>
-      </main>
-    </AuthCheck>
-  );
-}
+export default HeartJumpPage;
