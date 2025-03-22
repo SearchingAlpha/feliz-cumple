@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Heart, Gift, Trophy } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import '../globals.css';
 
 // Custom Pixel Button component
@@ -101,6 +102,8 @@ const PixelStar = ({ size = 12, color = "bg-yellow-300" }) => (
 );
 
 const GamingHub = () => {
+  const router = useRouter(); // For navigation
+  
   // Game state
   const [gameState, setGameState] = useState({
     flowerMatch: false,
@@ -108,12 +111,31 @@ const GamingHub = () => {
     heartJump: false
   });
 
-  // Load game state from localStorage on component mount
+  // Load game state from localStorage on component mount and when returning to the hub
   useEffect(() => {
-    const savedState = localStorage.getItem('gameState');
-    if (savedState) {
-      setGameState(JSON.parse(savedState));
+    function loadGameState() {
+      try {
+        const savedState = localStorage.getItem('gameState');
+        if (savedState) {
+          const parsedState = JSON.parse(savedState);
+          console.log("Loading game state from localStorage:", parsedState);
+          setGameState(parsedState);
+        }
+      } catch (error) {
+        console.error("Error loading game state:", error);
+      }
     }
+
+    // Load initial state
+    loadGameState();
+    
+    // Add event listener for when the user returns to this page
+    window.addEventListener('focus', loadGameState);
+    
+    // Clean up
+    return () => {
+      window.removeEventListener('focus', loadGameState);
+    };
   }, []);
 
   // Save game state to localStorage when it changes
@@ -121,16 +143,17 @@ const GamingHub = () => {
     localStorage.setItem('gameState', JSON.stringify(gameState));
   }, [gameState]);
 
-  // Mock function to navigate to a game
+  // Function to navigate to a game
   const navigateToGame = (game) => {
-    // In a real app, this would navigate to the game
-    console.log(`Navigating to ${game} game`);
-    
-    // For demo purposes, this simulates completing a game
-    if (window.confirm(`Do you want to simulate completing the ${game} game?`)) {
-      const newGameState = { ...gameState };
-      newGameState[game] = true;
-      setGameState(newGameState);
+    if (game === 'flowerMatch') {
+      router.push('/game/pixel-flower-match');
+    } else {
+      // For demo purposes, this simulates completing the non-implemented games
+      if (window.confirm(`Do you want to simulate completing the ${game} game?`)) {
+        const newGameState = { ...gameState };
+        newGameState[game] = true;
+        setGameState(newGameState);
+      }
     }
   };
   
@@ -239,7 +262,7 @@ const GamingHub = () => {
           </div>
         </div>
         
-                  {/* Main content */}
+        {/* Main content */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Game selection */}
           <div className="md:col-span-2 bg-white rounded-xl p-6 shadow-lg border-4 border-purple-300">
@@ -249,7 +272,7 @@ const GamingHub = () => {
             </h2>
             
             <div className="grid grid-cols-1 gap-4">
-              {/* Game 1 */}
+              {/* Game 1 - Pixel Flower Match (implemented) */}
               <div className="p-4 bg-pink-50 rounded-lg border-2 border-pink-200">
                 <div className="flex justify-between items-center">
                   <div className="flex items-center">
@@ -276,13 +299,13 @@ const GamingHub = () => {
                       color="bg-pink-500"
                       completed={gameState.flowerMatch}
                     >
-                      {gameState.flowerMatch ? 'Completed' : 'Play Now'}
+                      {gameState.flowerMatch ? 'Play Again' : 'Play Now'}
                     </PixelButton>
                   </div>
                 </div>
               </div>
               
-              {/* Game 2 */}
+              {/* Game 2 - Cupcake Catch (placeholder) */}
               <div className="p-4 bg-purple-50 rounded-lg border-2 border-purple-200">
                 <div className="flex justify-between items-center">
                   <div className="flex items-center">
@@ -315,7 +338,7 @@ const GamingHub = () => {
                 </div>
               </div>
               
-              {/* Game 3 */}
+              {/* Game 3 - Heart Jump (placeholder) */}
               <div className="p-4 bg-red-50 rounded-lg border-2 border-red-200">
                 <div className="flex justify-between items-center">
                   <div className="flex items-center">
@@ -390,8 +413,6 @@ const GamingHub = () => {
           just for you!
         </span>
       </div>
-      
-      {/* No inline styles needed as they've been moved to global.css */}
     </div>
   );
 };
