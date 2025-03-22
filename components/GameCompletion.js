@@ -2,17 +2,8 @@
 
 import { useRouter } from 'next/navigation';
 import { Trophy } from 'lucide-react';
+import { useEffect } from 'react';
 
-/**
- * GameCompletion component to be used across all games
- * 
- * @param {Object} props Component props
- * @param {string} props.gameId The game identifier (e.g., 'flowerMatch')
- * @param {number} props.score Optional score or stats to display
- * @param {string} props.scoreLabel Optional label for the score (e.g., 'Moves', 'Points')
- * @param {Function} props.onRestart Function to call when user clicks Restart
- * @param {string} props.customMessage Optional custom victory message
- */
 export default function GameCompletion({
   gameId,
   score,
@@ -22,33 +13,75 @@ export default function GameCompletion({
 }) {
   const router = useRouter();
   
-  // Mark the game as completed and return to hub
+  // Debug log the game ID to make sure it's correct
+  useEffect(() => {
+    console.log(`Game completion mounted for: ${gameId}`);
+    
+    try {
+      const currentState = localStorage.getItem('gameState');
+      console.log('Current game state:', currentState);
+    } catch (error) {
+      console.error('Error reading game state:', error);
+    }
+  }, [gameId]);
+  
+  // Handle marking the game as completed
   const handleMarkAsCompleted = () => {
     try {
-      // Get current game state or initialize if not exist
-      const gameState = JSON.parse(localStorage.getItem('gameState') || 
-        '{"flowerMatch":false,"cupcakeCatch":false,"heartJump":false}');
+      console.log(`Marking game ${gameId} as completed`);
       
-      // Mark this specific game as completed
+      // Define the default state
+      const defaultState = {
+        flowerMatch: false,
+        cupcakeCatch: false,
+        heartJump: false
+      };
+      
+      // Get the current state
+      let gameState;
+      try {
+        const savedState = localStorage.getItem('gameState');
+        console.log('Retrieved game state:', savedState);
+        
+        if (savedState) {
+          gameState = JSON.parse(savedState);
+        } else {
+          console.log('No existing game state found, using default');
+          gameState = defaultState;
+        }
+      } catch (error) {
+        console.error('Error parsing game state, using default:', error);
+        gameState = defaultState;
+      }
+      
+      // Mark this game as completed
       gameState[gameId] = true;
+      console.log('Updated game state:', gameState);
       
-      // Save to localStorage
-      localStorage.setItem('gameState', JSON.stringify(gameState));
+      // Save back to localStorage
+      const stringifiedState = JSON.stringify(gameState);
+      localStorage.setItem('gameState', stringifiedState);
+      console.log('Saved game state to localStorage:', stringifiedState);
       
-      // Dispatch event for game hub to detect change
-      const event = new CustomEvent('gameStateChanged', { 
-        detail: { game: gameId, completed: true } 
-      });
-      window.dispatchEvent(event);
+      // CRITICAL: Force a global flag to be checked on hub page load
+      localStorage.setItem('gameStateUpdated', 'true');
       
-      // Navigate back to hub
-      router.push('/hub');
+      // Also store in sessionStorage as backup
+      sessionStorage.setItem('gameStateBackup', stringifiedState);
+      console.log('Backup saved to sessionStorage');
+      
+      // Delay navigation slightly to ensure storage is updated
+      setTimeout(() => {
+        console.log('Navigating to hub...');
+        router.push('/hub');
+      }, 200);
+      
     } catch (error) {
       console.error('Failed to save game completion:', error);
       alert('There was an error saving your progress. Please try again.');
     }
   };
-
+  
   // Default victory message
   const defaultMessage = "Congratulations! You've completed the game!";
   

@@ -115,31 +115,72 @@ const GamingHub = () => {
   useEffect(() => {
     function loadGameState() {
       try {
-        const savedState = localStorage.getItem('gameState');
-        if (savedState) {
-          const parsedState = JSON.parse(savedState);
-          setGameState(parsedState);
+        console.log("Loading game state in GamingHub");
+        
+        // Check for the game state updated flag
+        const wasUpdated = localStorage.getItem('gameStateUpdated');
+        
+        // Check for backup in sessionStorage
+        const backupState = sessionStorage.getItem('gameStateBackup');
+        
+        if (wasUpdated === 'true' && backupState) {
+          console.log("Using backup state from sessionStorage");
+          const parsedBackup = JSON.parse(backupState);
+          setGameState(parsedBackup);
+          
+          // Clear the flags
+          localStorage.removeItem('gameStateUpdated');
+          sessionStorage.removeItem('gameStateBackup');
+          
+          // Update localStorage with backup for consistency
+          localStorage.setItem('gameState', backupState);
+        } else {
+          // Regular flow - get from localStorage
+          const savedState = localStorage.getItem('gameState');
+          console.log("Loaded from localStorage:", savedState);
+          
+          if (savedState) {
+            const parsedState = JSON.parse(savedState);
+            setGameState(parsedState);
+          } else {
+            // Initialize with default state if none exists
+            const defaultState = {
+              flowerMatch: false,
+              cupcakeCatch: false,
+              heartJump: false
+            };
+            setGameState(defaultState);
+            localStorage.setItem('gameState', JSON.stringify(defaultState));
+          }
         }
       } catch (error) {
         console.error("Error loading game state:", error);
       }
     }
-
+  
     // Load initial state
     loadGameState();
     
-    // Listen for the custom event from the game
-    function handleGameStateChanged(event) {
-      loadGameState();
-    }
+    // Set up interval to periodically check for changes
+    const intervalId = setInterval(() => {
+      try {
+        // Check for the game state updated flag
+        const wasUpdated = localStorage.getItem('gameStateUpdated');
+        if (wasUpdated === 'true') {
+          console.log("Detected game state update flag");
+          loadGameState();
+        }
+      } catch (error) {
+        console.error("Error checking for updates:", error);
+      }
+    }, 1000);
     
-    // Add event listeners
-    window.addEventListener('gameStateChanged', handleGameStateChanged);
+    // Listen for focus events to reload state when tab regains focus
     window.addEventListener('focus', loadGameState);
     
     // Clean up
     return () => {
-      window.removeEventListener('gameStateChanged', handleGameStateChanged);
+      clearInterval(intervalId);
       window.removeEventListener('focus', loadGameState);
     };
   }, []);

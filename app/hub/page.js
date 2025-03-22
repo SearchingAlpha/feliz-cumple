@@ -15,7 +15,41 @@ function Loading() {
   );
 }
 
-// Authentication check component with safer redirect
+// Function to initialize localStorage if it doesn't exist yet
+function EnsureStorage() {
+  useEffect(() => {
+    try {
+      console.log("Checking for game state in hub page");
+      
+      // Check if localStorage exists and has gameState
+      const currentState = localStorage.getItem('gameState');
+      if (!currentState) {
+        console.log("No game state found, initializing");
+        localStorage.setItem('gameState', JSON.stringify({
+          flowerMatch: false,
+          cupcakeCatch: false,
+          heartJump: false
+        }));
+      } else {
+        console.log("Existing game state found:", currentState);
+      }
+      
+      // Check for backup in sessionStorage
+      const backupState = sessionStorage.getItem('gameStateBackup');
+      if (backupState) {
+        console.log("Found backup game state, restoring");
+        localStorage.setItem('gameState', backupState);
+        localStorage.setItem('gameStateUpdated', 'true');
+      }
+    } catch (error) {
+      console.error("Error initializing storage:", error);
+    }
+  }, []);
+  
+  return null;
+}
+
+// Authentication check component with safer redirect and game state initialization
 function AuthCheck({ children }) {
   const router = useRouter();
   const [authenticated, setAuthenticated] = useState(false);
@@ -28,6 +62,14 @@ function AuthCheck({ children }) {
     try {
       const isAuthenticated = localStorage.getItem('isAuthenticated');
       console.log("Authentication status:", isAuthenticated);
+      
+      // Check for any backup state in sessionStorage
+      const backupGameState = sessionStorage.getItem('updatedGameState');
+      if (backupGameState) {
+        console.log("Found backup game state in session, restoring to localStorage");
+        localStorage.setItem('gameState', backupGameState);
+        sessionStorage.removeItem('updatedGameState');
+      }
       
       if (isAuthenticated === 'true') {
         console.log("Authentication confirmed in hub");
@@ -59,9 +101,11 @@ function AuthCheck({ children }) {
   return authenticated ? children : <Loading />;
 }
 
+// Then modify your HubPage function to include EnsureStorage:
 export default function HubPage() {
   return (
     <AuthCheck>
+      <EnsureStorage />
       <GamingHub />
     </AuthCheck>
   );
