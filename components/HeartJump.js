@@ -1,484 +1,589 @@
-"use client";
+'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import GameCompletion from '@/components/GameCompletion';
 
-function HeartJumpGame({ onComplete }) {
-  const [gameState, setGameState] = useState({
-    player: {
-      x: 50,
-      y: 350,
-      width: 32,
-      height: 32,
-      velocityY: 0,
-      isJumping: false,
-    },
-    hearts: [],
-    score: 0,
-    isGameOver: false,
-    isGameWon: false,
-    timeLeft: 60,
-    platforms: [
-      { x: 0, y: 400, width: 600, height: 20 },
-      { x: 150, y: 300, width: 100, height: 20 },
-      { x: 320, y: 250, width: 100, height: 20 },
-      { x: 100, y: 200, width: 100, height: 20 },
-      { x: 300, y: 150, width: 100, height: 20 },
-    ],
-  });
-  
+export default function HeartJump() {
+  const router = useRouter();
   const canvasRef = useRef(null);
-  const frameRef = useRef(null);
+  const [score, setScore] = useState(0);
   const [gameStarted, setGameStarted] = useState(false);
+  const [gameOver, setGameOver] = useState(false);
+  const [gameWon, setGameWon] = useState(false);
   const [showInstructions, setShowInstructions] = useState(true);
   
-  // Images
-  const [playerImg, setPlayerImg] = useState(null);
-  const [heartImg, setHeartImg] = useState(null);
-  const [platformImg, setPlatformImg] = useState(null);
-  const [backgroundImg, setBackgroundImg] = useState(null);
+  // Game state - stored in ref to avoid re-renders during game loop
+  const gameStateRef = useRef({
+    heart: {
+      x: 50,
+      y: 200,
+      width: 40,
+      height: 40,
+      jumping: false,
+      ducking: false,
+      jumpHeight: 0,
+      jumpVelocity: 0,
+      jumpSpeed: 15,
+      gravity: 0.8
+    },
+    obstacles: [],
+    ground: {
+      y: 240,
+      height: 20
+    },
+    speed: 5,
+    baseSpeed: 5,
+    maxSpeed: 12,
+    speedIncrement: 0.001,
+    obstacleTimer: 0,
+    minObstacleInterval: 60,
+    maxObstacleInterval: 150,
+    score: 0,
+    targetScore: 2000,
+    running: false,
+    lastFrame: 0,
+    debugMode: false
+  });
   
-  // Load images
-  useEffect(() => {
-    const playerImage = new Image();
-    playerImage.src = '/images/games/heart-jump/player.png';
-    playerImage.onload = () => setPlayerImg(playerImage);
-    
-    const heartImage = new Image();
-    heartImage.src = '/images/games/heart-jump/heart.png';
-    heartImage.onload = () => setHeartImg(heartImage);
-    
-    const platformImage = new Image();
-    platformImage.src = '/images/games/heart-jump/platform.png';
-    platformImage.onload = () => setPlatformImg(platformImage);
-    
-    const bgImage = new Image();
-    bgImage.src = '/images/games/heart-jump/background.png';
-    bgImage.onload = () => setBackgroundImg(bgImage);
-  }, []);
-  
-  // Generate hearts randomly
-  useEffect(() => {
-    if (!gameStarted || !heartImg) return;
-    
-    // Generate 15 hearts at random positions on platforms
-    const newHearts = [];
-    for (let i = 0; i < 15; i++) {
-      const randomPlatform = gameState.platforms[Math.floor(Math.random() * (gameState.platforms.length - 1)) + 1];
-      newHearts.push({
-        x: randomPlatform.x + Math.random() * (randomPlatform.width - 20),
-        y: randomPlatform.y - 30,
-        width: 24,
-        height: 24,
-        collected: false,
-      });
-    }
-    
-    setGameState(prev => ({ ...prev, hearts: newHearts }));
-  }, [gameStarted, heartImg]);
-  
-  // Key handlers
-  useEffect(() => {
-    if (!gameStarted) return;
-    
-    const keys = {
-      ArrowLeft: false,
-      ArrowRight: false,
-      ArrowUp: false,
-    };
-    
-    const keyDownHandler = (e) => {
-      if (e.key in keys) {
-        keys[e.key] = true;
-      }
-    };
-    
-    const keyUpHandler = (e) => {
-      if (e.key in keys) {
-        keys[e.key] = false;
-      }
-    };
-    
-    window.addEventListener('keydown', keyDownHandler);
-    window.addEventListener('keyup', keyUpHandler);
-    
-    // Game loop
-    const gameLoop = () => {
-      setGameState(prev => {
-        if (prev.isGameOver || prev.isGameWon) return prev;
-        
-        // Update player position
-        let { player, platforms, hearts, score } = prev;
-        let { x, y, velocityY, isJumping } = player;
-        
-        // Move left/right
-        if (keys.ArrowLeft) x -= 5;
-        if (keys.ArrowRight) x += 5;
-        
-        // Jump
-        if (keys.ArrowUp && !isJumping) {
-          velocityY = -12;
-          isJumping = true;
-        }
-        
-        // Apply gravity
-        velocityY += 0.8;
-        y += velocityY;
-        
-        // Check platform collisions
-        isJumping = true;
-        for (const platform of platforms) {
-          if (
-            x + player.width > platform.x &&
-            x < platform.x + platform.width &&
-            y + player.height > platform.y &&
-            y + player.height < platform.y + platform.height / 2 &&
-            velocityY > 0
-          ) {
-            y = platform.y - player.height;
-            velocityY = 0;
-            isJumping = false;
-            break;
-          }
-        }
-        
-        // Check boundaries
-        if (x < 0) x = 0;
-        if (x + player.width > 600) x = 600 - player.width;
-        
-        // Check if fallen off bottom
-        if (y > 500) {
-          return { ...prev, isGameOver: true };
-        }
-        
-        // Check heart collisions
-        for (let i = 0; i < hearts.length; i++) {
-          if (!hearts[i].collected &&
-              x + player.width > hearts[i].x &&
-              x < hearts[i].x + hearts[i].width &&
-              y + player.height > hearts[i].y &&
-              y < hearts[i].y + hearts[i].height) {
-            hearts[i].collected = true;
-            score += 1;
-          }
-        }
-        
-        // Check for win condition (collect 12 hearts)
-        if (score >= 12) {
-          return { ...prev, 
-            player: { ...player, x, y, velocityY, isJumping }, 
-            hearts, 
-            score, 
-            isGameWon: true 
-          };
-        }
-        
-        // Update time
-        const timeLeft = prev.timeLeft - 1/60; // Assuming 60 FPS
-        if (timeLeft <= 0) {
-          return { ...prev, isGameOver: true };
-        }
-        
-        return { 
-          ...prev, 
-          player: { ...player, x, y, velocityY, isJumping }, 
-          hearts, 
-          score,
-          timeLeft 
-        };
-      });
-      
-      frameRef.current = requestAnimationFrame(gameLoop);
-    };
-    
-    frameRef.current = requestAnimationFrame(gameLoop);
-    
-    // Cleanup function
-    return () => {
-      window.removeEventListener('keydown', keyDownHandler);
-      window.removeEventListener('keyup', keyUpHandler);
-      cancelAnimationFrame(frameRef.current);
-    };
-  }, [gameStarted]);
-  
-  // Draw the game
+  // Set up game and canvas
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     
-    const ctx = canvas.getContext('2d');
+    // Reset game state when component mounts
+    gameStateRef.current = {
+      ...gameStateRef.current,
+      heart: {
+        ...gameStateRef.current.heart,
+        y: 200
+      },
+      obstacles: [],
+      speed: gameStateRef.current.baseSpeed,
+      score: 0,
+      running: false
+    };
     
-    // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    // Draw background
-    if (backgroundImg) {
-      ctx.drawImage(backgroundImg, 0, 0, canvas.width, canvas.height);
-    } else {
-      ctx.fillStyle = '#ffd9eb'; // Pastel pink background if image not loaded
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-    }
-    
-    // Draw platforms
-    gameState.platforms.forEach(platform => {
-      if (platformImg) {
-        // Tile the platform image
-        const tileSize = 20;
-        for (let i = 0; i < platform.width; i += tileSize) {
-          ctx.drawImage(
-            platformImg,
-            platform.x + i,
-            platform.y,
-            Math.min(tileSize, platform.width - i),
-            platform.height
-          );
-        }
-      } else {
-        ctx.fillStyle = '#c988d9'; // Pastel purple platforms if image not loaded
-        ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
-      }
-    });
-    
-    // Draw hearts
-    gameState.hearts.forEach(heart => {
-      if (!heart.collected) {
-        if (heartImg) {
-          ctx.drawImage(heartImg, heart.x, heart.y, heart.width, heart.height);
-        } else {
-          ctx.fillStyle = '#ff6b8d'; // Coral pink hearts if image not loaded
-          ctx.fillRect(heart.x, heart.y, heart.width, heart.height);
-        }
-      }
-    });
-    
-    // Draw player
-    if (playerImg) {
-      ctx.drawImage(
-        playerImg,
-        gameState.player.x,
-        gameState.player.y,
-        gameState.player.width,
-        gameState.player.height
-      );
-    } else {
-      ctx.fillStyle = '#6dd5ed'; // Light blue player if image not loaded
-      ctx.fillRect(
-        gameState.player.x,
-        gameState.player.y,
-        gameState.player.width,
-        gameState.player.height
-      );
-    }
-    
-    // Draw HUD (score, time)
-    ctx.fillStyle = '#fff';
-    ctx.strokeStyle = '#000';
-    ctx.lineWidth = 3;
-    ctx.font = '20px "Press Start 2P", cursive';
-    const scoreText = `Hearts: ${gameState.score}/12`;
-    const timeText = `Time: ${Math.ceil(gameState.timeLeft)}`;
-    
-    // Score with text shadow
-    ctx.strokeText(scoreText, 20, 30);
-    ctx.fillText(scoreText, 20, 30);
-    
-    // Time with text shadow
-    ctx.strokeText(timeText, 400, 30);
-    ctx.fillText(timeText, 400, 30);
-    
-    // Draw game over or win screen
-    if (gameState.isGameOver) {
-      drawGameOverScreen(ctx, canvas);
-    }
-    
-    if (gameState.isGameWon) {
-      drawGameWinScreen(ctx, canvas);
+    // Set up event listeners for keyboard controls
+    const handleKeyDown = (e) => {
+      if (!gameStateRef.current.running) return;
       
-      // Notify parent component of game completion
-      if (onComplete && typeof onComplete === 'function') {
-        onComplete();
-      }
-    }
-  }, [gameState, playerImg, heartImg, platformImg, backgroundImg, onComplete]);
-  
-  // Helper function to draw game over screen
-  const drawGameOverScreen = (ctx, canvas) => {
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    ctx.fillStyle = '#ff6b8d';
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 5;
-    ctx.font = '30px "Press Start 2P", cursive';
-    const gameOverText = 'GAME OVER';
-    const textWidth = ctx.measureText(gameOverText).width;
-    
-    ctx.strokeText(gameOverText, (canvas.width - textWidth) / 2, canvas.height / 2 - 40);
-    ctx.fillText(gameOverText, (canvas.width - textWidth) / 2, canvas.height / 2 - 40);
-    
-    ctx.font = '16px "Press Start 2P", cursive';
-    const restartText = 'Press ENTER to play again';
-    const restartWidth = ctx.measureText(restartText).width;
-    
-    ctx.strokeText(restartText, (canvas.width - restartWidth) / 2, canvas.height / 2 + 20);
-    ctx.fillText(restartText, (canvas.width - restartWidth) / 2, canvas.height / 2 + 20);
-  };
-  
-  // Helper function to draw win screen
-  const drawGameWinScreen = (ctx, canvas) => {
-    ctx.fillStyle = 'rgba(255, 192, 203, 0.7)'; // Pink overlay
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    ctx.fillStyle = '#fff';
-    ctx.strokeStyle = '#6dd5ed';
-    ctx.lineWidth = 5;
-    ctx.font = '30px "Press Start 2P", cursive';
-    const winText = 'YOU WIN!';
-    const textWidth = ctx.measureText(winText).width;
-    
-    ctx.strokeText(winText, (canvas.width - textWidth) / 2, canvas.height / 2 - 40);
-    ctx.fillText(winText, (canvas.width - textWidth) / 2, canvas.height / 2 - 40);
-    
-    ctx.font = '16px "Press Start 2P", cursive';
-    const unlockText = 'Present Unlocked!';
-    const unlockWidth = ctx.measureText(unlockText).width;
-    
-    ctx.strokeText(unlockText, (canvas.width - unlockWidth) / 2, canvas.height / 2 + 20);
-    ctx.fillText(unlockText, (canvas.width - unlockWidth) / 2, canvas.height / 2 + 20);
-    
-    ctx.font = '14px "Press Start 2P", cursive';
-    const continueText = 'Press ENTER to continue';
-    const continueWidth = ctx.measureText(continueText).width;
-    
-    ctx.strokeText(continueText, (canvas.width - continueWidth) / 2, canvas.height / 2 + 60);
-    ctx.fillText(continueText, (canvas.width - continueWidth) / 2, canvas.height / 2 + 60);
-  };
-  
-  // Handle enter key for restart/continue
-  useEffect(() => {
-    const handleKeyPress = (e) => {
-      if (e.key === 'Enter') {
-        if (gameState.isGameOver) {
-          // Reset game
-          setGameState({
-            player: {
-              x: 50,
-              y: 350,
-              width: 32,
-              height: 32,
-              velocityY: 0,
-              isJumping: false,
-            },
-            hearts: [],
-            score: 0,
-            isGameOver: false,
-            isGameWon: false,
-            timeLeft: 60,
-            platforms: [
-              { x: 0, y: 400, width: 600, height: 20 },
-              { x: 150, y: 300, width: 100, height: 20 },
-              { x: 320, y: 250, width: 100, height: 20 },
-              { x: 100, y: 200, width: 100, height: 20 },
-              { x: 300, y: 150, width: 100, height: 20 },
-            ],
-          });
-        } else if (gameState.isGameWon) {
-          // Return to hub
-          window.location.href = '/gaming-hub';
-        } else if (showInstructions) {
-          // Start game after instructions
-          setShowInstructions(false);
-          setGameStarted(true);
+      if (e.key === 'ArrowUp' || e.key === ' ' || e.code === 'Space') {
+        e.preventDefault();
+        if (!gameStateRef.current.heart.jumping && !gameStateRef.current.heart.ducking) {
+          gameStateRef.current.heart.jumping = true;
+          gameStateRef.current.heart.jumpVelocity = gameStateRef.current.heart.jumpSpeed;
+        }
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (!gameStateRef.current.heart.jumping) {
+          gameStateRef.current.heart.ducking = true;
+          gameStateRef.current.heart.height = 20; // Smaller height when ducking
         }
       }
     };
     
-    window.addEventListener('keypress', handleKeyPress);
-    return () => window.removeEventListener('keypress', handleKeyPress);
-  }, [gameState.isGameOver, gameState.isGameWon, showInstructions]);
+    const handleKeyUp = (e) => {
+      if (!gameStateRef.current.running) return;
+      
+      if (e.key === 'ArrowDown') {
+        gameStateRef.current.heart.ducking = false;
+        gameStateRef.current.heart.height = 40; // Restore normal height
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    
+    // Canvas touch/click handler for mobile or mouse controls
+    const handleCanvasClick = (e) => {
+      if (!gameStateRef.current.running) return;
+      
+      // Determine if click is in top half (jump) or bottom half (duck)
+      const rect = canvas.getBoundingClientRect();
+      const y = e.clientY - rect.top;
+      const canvasHeight = rect.height;
+      
+      if (y < canvasHeight / 2) {
+        // Upper half - jump
+        if (!gameStateRef.current.heart.jumping && !gameStateRef.current.heart.ducking) {
+          gameStateRef.current.heart.jumping = true;
+          gameStateRef.current.heart.jumpVelocity = gameStateRef.current.heart.jumpSpeed;
+        }
+      } else {
+        // Lower half - duck
+        if (!gameStateRef.current.heart.jumping) {
+          gameStateRef.current.heart.ducking = true;
+          gameStateRef.current.heart.height = 20;
+          
+          // Auto-release duck after short period for mobile
+          setTimeout(() => {
+            if (gameStateRef.current.heart.ducking) {
+              gameStateRef.current.heart.ducking = false;
+              gameStateRef.current.heart.height = 40;
+            }
+          }, 500);
+        }
+      }
+    };
+    
+    canvas.addEventListener('click', handleCanvasClick);
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      if (e.touches.length > 0) {
+        const touch = e.touches[0];
+        handleCanvasClick({
+          clientX: touch.clientX,
+          clientY: touch.clientY
+        });
+      }
+    });
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+      canvas.removeEventListener('click', handleCanvasClick);
+      canvas.removeEventListener('touchstart', handleCanvasClick);
+    };
+  }, []);
+  
+  // Main game loop
+  useEffect(() => {
+    if (!gameStarted) return;
+    
+    let animationId;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    const state = gameStateRef.current;
+    state.running = true;
+    state.lastFrame = performance.now();
+    
+    // Reset game state for new game
+    state.heart.y = 200;
+    state.obstacles = [];
+    state.speed = state.baseSpeed;
+    state.score = 0;
+    state.obstacleTimer = 0;
+    
+    // Game loop function
+    const gameLoop = (timestamp) => {
+      if (!state.running) return;
+      
+      // Clear canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Calculate time passed
+      const deltaTime = timestamp - state.lastFrame;
+      state.lastFrame = timestamp;
+      
+      // Update game state
+      updateGameState(deltaTime);
+      
+      // Render game
+      drawGame(ctx);
+      
+      // Check win condition
+      if (state.score >= state.targetScore) {
+        state.running = false;
+        setGameWon(true);
+        setScore(state.score);
+        return;
+      }
+      
+      // Continue loop
+      animationId = requestAnimationFrame(gameLoop);
+    };
+    
+    // Start game loop
+    animationId = requestAnimationFrame(gameLoop);
+    
+    // Cleanup function
+    return () => {
+      cancelAnimationFrame(animationId);
+      state.running = false;
+    };
+  }, [gameStarted]);
+  
+  const updateGameState = (deltaTime) => {
+    const state = gameStateRef.current;
+    
+    // Update heart position (jumping or falling)
+    if (state.heart.jumping) {
+      state.heart.y -= state.heart.jumpVelocity;
+      state.heart.jumpVelocity -= state.heart.gravity;
+      
+      // Check if heart has landed
+      if (state.heart.y >= state.ground.y - state.heart.height) {
+        state.heart.y = state.ground.y - state.heart.height;
+        state.heart.jumping = false;
+        state.heart.jumpVelocity = 0;
+      }
+    } else if (state.heart.y < state.ground.y - state.heart.height) {
+      // Apply gravity if heart is above ground (for falling)
+      state.heart.y += state.heart.gravity * 5;
+      if (state.heart.y > state.ground.y - state.heart.height) {
+        state.heart.y = state.ground.y - state.heart.height;
+      }
+    }
+    
+    // Update obstacle timer and spawn new obstacles
+    state.obstacleTimer--;
+    if (state.obstacleTimer <= 0) {
+      // Generate a random interval before next obstacle
+      state.obstacleTimer = Math.floor(
+        Math.random() * (state.maxObstacleInterval - state.minObstacleInterval) 
+        + state.minObstacleInterval
+      );
+      
+      // Create a new obstacle
+      const type = Math.random() < 0.3 ? 'flying' : 'ground';
+      const height = type === 'flying' ? 30 : 30 + Math.random() * 20;
+      const width = 30 + Math.random() * 20;
+      
+      // Flying obstacles appear higher up
+      const y = type === 'flying' 
+        ? state.ground.y - state.heart.height - height - 30 - Math.random() * 20 
+        : state.ground.y - height;
+      
+      state.obstacles.push({
+        x: canvas.width,
+        y,
+        width,
+        height,
+        type,
+        passed: false
+      });
+    }
+    
+    // Increment speed gradually
+    state.speed = Math.min(state.baseSpeed + (state.score / 100) * 0.5, state.maxSpeed);
+    
+    // Move obstacles and remove ones that have gone off screen
+    for (let i = state.obstacles.length - 1; i >= 0; i--) {
+      const obstacle = state.obstacles[i];
+      
+      // Move obstacle
+      obstacle.x -= state.speed;
+      
+      // Check if heart has passed this obstacle
+      if (!obstacle.passed && obstacle.x + obstacle.width < state.heart.x) {
+        obstacle.passed = true;
+        state.score += 10;
+        setScore(state.score);
+      }
+      
+      // Check collision with heart
+      if (checkCollision(state.heart, obstacle)) {
+        // Game over
+        state.running = false;
+        setGameOver(true);
+        setScore(state.score);
+        return;
+      }
+      
+      // Remove obstacles that have gone off screen
+      if (obstacle.x + obstacle.width < 0) {
+        state.obstacles.splice(i, 1);
+      }
+    }
+  };
+  
+  const drawGame = (ctx) => {
+    const state = gameStateRef.current;
+    
+    // Draw sky background
+    ctx.fillStyle = '#d3f0ff';
+    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    
+    // Draw ground
+    ctx.fillStyle = '#c988d9';
+    ctx.fillRect(0, state.ground.y, ctx.canvas.width, state.ground.height);
+    
+    // Draw dashes on the ground
+    ctx.fillStyle = '#b86bc9';
+    for (let i = 0; i < ctx.canvas.width; i += 30) {
+      ctx.fillRect(i, state.ground.y, 15, 2);
+    }
+    
+    // Draw heart character
+    drawHeart(ctx, state.heart);
+    
+    // Draw obstacles
+    for (const obstacle of state.obstacles) {
+      drawObstacle(ctx, obstacle);
+    }
+    
+    // Draw score
+    ctx.fillStyle = '#ff6b8d';
+    ctx.font = '16px "Press Start 2P", monospace';
+    ctx.fillText(`Score: ${state.score}`, 10, 30);
+    
+    // Draw target score
+    ctx.fillStyle = '#5F27CD';
+    ctx.font = '12px "Press Start 2P", monospace';
+    ctx.fillText(`Target: ${state.targetScore}`, 10, 50);
+  };
+  
+  const drawHeart = (ctx, heart) => {
+    if (heart.ducking) {
+      // Draw ducking heart (flatter)
+      ctx.fillStyle = '#ff6b8d';
+      
+      // Draw a simple heart shape that's flatter
+      ctx.beginPath();
+      ctx.moveTo(heart.x + heart.width / 2, heart.y + heart.height);
+      
+      // Left side
+      ctx.bezierCurveTo(
+        heart.x, heart.y + heart.height * 0.8,
+        heart.x, heart.y,
+        heart.x + heart.width / 2, heart.y + heart.height * 0.5
+      );
+      
+      // Right side
+      ctx.bezierCurveTo(
+        heart.x + heart.width, heart.y,
+        heart.x + heart.width, heart.y + heart.height * 0.8,
+        heart.x + heart.width / 2, heart.y + heart.height
+      );
+      
+      ctx.fill();
+      
+      // Add pixel-like details
+      ctx.fillStyle = '#ff8da8';
+      ctx.fillRect(heart.x + 10, heart.y + 5, 4, 4);
+    } else {
+      // Draw normal heart
+      ctx.fillStyle = '#ff6b8d';
+      
+      // Draw a simple heart shape
+      ctx.beginPath();
+      ctx.moveTo(heart.x + heart.width / 2, heart.y + heart.height);
+      
+      // Left side
+      ctx.bezierCurveTo(
+        heart.x, heart.y + heart.height * 0.8,
+        heart.x, heart.y,
+        heart.x + heart.width / 2, heart.y + heart.height * 0.3
+      );
+      
+      // Right side
+      ctx.bezierCurveTo(
+        heart.x + heart.width, heart.y,
+        heart.x + heart.width, heart.y + heart.height * 0.8,
+        heart.x + heart.width / 2, heart.y + heart.height
+      );
+      
+      ctx.fill();
+      
+      // Add pixel-like details
+      ctx.fillStyle = '#ff8da8';
+      ctx.fillRect(heart.x + 10, heart.y + 10, 5, 5);
+    }
+  };
+  
+  const drawObstacle = (ctx, obstacle) => {
+    // Draw a cute monster
+    if (obstacle.type === 'flying') {
+      // Flying monster
+      ctx.fillStyle = '#54A0FF'; // Blue for flying monsters
+      
+      // Body
+      ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+      
+      // Wings
+      ctx.fillRect(obstacle.x - 10, obstacle.y + obstacle.height / 3, 10, obstacle.height / 3);
+      ctx.fillRect(obstacle.x + obstacle.width, obstacle.y + obstacle.height / 3, 10, obstacle.height / 3);
+      
+      // Eyes
+      ctx.fillStyle = 'white';
+      ctx.fillRect(obstacle.x + obstacle.width * 0.2, obstacle.y + obstacle.height * 0.2, 5, 5);
+      ctx.fillRect(obstacle.x + obstacle.width * 0.6, obstacle.y + obstacle.height * 0.2, 5, 5);
+      
+      // Pupils
+      ctx.fillStyle = 'black';
+      ctx.fillRect(obstacle.x + obstacle.width * 0.2 + 2, obstacle.y + obstacle.height * 0.2 + 2, 2, 2);
+      ctx.fillRect(obstacle.x + obstacle.width * 0.6 + 2, obstacle.y + obstacle.height * 0.2 + 2, 2, 2);
+      
+      // Mouth
+      ctx.fillRect(obstacle.x + obstacle.width * 0.3, obstacle.y + obstacle.height * 0.6, obstacle.width * 0.4, 2);
+    } else {
+      // Ground monster
+      ctx.fillStyle = '#1DD1A1'; // Green for ground monsters
+      
+      // Body
+      ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+      
+      // Spikes
+      const spikeHeight = obstacle.height * 0.3;
+      const spikeWidth = obstacle.width / 4;
+      for (let i = 0; i < 3; i++) {
+        ctx.beginPath();
+        ctx.moveTo(obstacle.x + spikeWidth * i, obstacle.y);
+        ctx.lineTo(obstacle.x + spikeWidth * (i + 0.5), obstacle.y - spikeHeight);
+        ctx.lineTo(obstacle.x + spikeWidth * (i + 1), obstacle.y);
+        ctx.fill();
+      }
+      
+      // Eyes
+      ctx.fillStyle = 'white';
+      ctx.fillRect(obstacle.x + obstacle.width * 0.2, obstacle.y + obstacle.height * 0.2, 5, 5);
+      ctx.fillRect(obstacle.x + obstacle.width * 0.6, obstacle.y + obstacle.height * 0.2, 5, 5);
+      
+      // Pupils
+      ctx.fillStyle = 'black';
+      ctx.fillRect(obstacle.x + obstacle.width * 0.2 + 2, obstacle.y + obstacle.height * 0.2 + 2, 2, 2);
+      ctx.fillRect(obstacle.x + obstacle.width * 0.6 + 2, obstacle.y + obstacle.height * 0.2 + 2, 2, 2);
+      
+      // Mouth - angry
+      ctx.beginPath();
+      ctx.moveTo(obstacle.x + obstacle.width * 0.3, obstacle.y + obstacle.height * 0.6);
+      ctx.lineTo(obstacle.x + obstacle.width * 0.5, obstacle.y + obstacle.height * 0.7);
+      ctx.lineTo(obstacle.x + obstacle.width * 0.7, obstacle.y + obstacle.height * 0.6);
+      ctx.stroke();
+    }
+  };
+  
+  const checkCollision = (heart, obstacle) => {
+    // Adjust collision box for the heart (smaller than visual size)
+    const heartBox = {
+      x: heart.x + 10,
+      y: heart.y + 10,
+      width: heart.width - 20,
+      height: heart.height - 20
+    };
+    
+    // Check for collision using simple box collision
+    return (
+      heartBox.x < obstacle.x + obstacle.width &&
+      heartBox.x + heartBox.width > obstacle.x &&
+      heartBox.y < obstacle.y + obstacle.height &&
+      heartBox.y + heartBox.height > obstacle.y
+    );
+  };
+  
+  const startGame = () => {
+    setShowInstructions(false);
+    setGameOver(false);
+    setGameWon(false);
+    setScore(0);
+    setGameStarted(true);
+  };
+  
+  const restartGame = () => {
+    setGameOver(false);
+    setGameWon(false);
+    startGame();
+  };
   
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-pink-200 to-purple-200 p-4">
-      <div className="pixel-box w-full max-w-4xl bg-white p-6 rounded-lg shadow-lg border-4 border-purple-400">
-        <h1 className="text-3xl font-bold text-center mb-4 text-pink-600 pixel-text">Heart Jump</h1>
+      <div className="w-full max-w-2xl">
+        <div className="text-center mb-4">
+          <h1 className="text-2xl font-bold text-purple-600 mb-2 font-pixel">Heart Runner</h1>
+          {!gameStarted && !gameOver && !gameWon && (
+            <p className="text-purple-500 mb-2">Run, jump and duck to avoid monsters!</p>
+          )}
+          {(gameStarted || gameOver || gameWon) && (
+            <p className="text-purple-500 mb-2">Score: {score} / {gameStateRef.current.targetScore}</p>
+          )}
+        </div>
         
         {showInstructions ? (
-          <div className="text-center p-4 bg-pink-100 rounded-lg mb-4">
-            <h2 className="text-2xl font-bold mb-3 text-purple-700">How to Play</h2>
-            <ul className="text-left space-y-2 mb-6 mx-auto max-w-md">
-              <li className="flex items-center">
-                <span className="font-bold mr-2">→</span> Use Arrow Keys to move
-              </li>
-              <li className="flex items-center">
-                <span className="font-bold mr-2">↑</span> Press Up Arrow to jump
-              </li>
-              <li className="flex items-center">
-                <span className="font-bold mr-2">❤️</span> Collect 12 hearts to win
-              </li>
-              <li className="flex items-center">
-                <span className="font-bold mr-2">⏱️</span> Complete the game before time runs out
-              </li>
-            </ul>
-            <button 
-              onClick={() => {
-                setShowInstructions(false);
-                setGameStarted(true);
-              }}
-              className="px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-lg shadow-md hover:from-pink-600 hover:to-purple-600 transition duration-300 font-bold"
+          <div className="text-center bg-white p-6 rounded-lg shadow-lg">
+            <h2 className="text-xl font-bold mb-4 text-pink-600 font-pixel">How to Play</h2>
+            <div className="mb-4 flex flex-col items-start text-left space-y-3">
+              <p className="flex items-center">
+                <span className="inline-block w-8 h-8 mr-3 bg-pink-100 text-pink-600 font-bold rounded-full flex items-center justify-center">↑</span>
+                <span>Press <b>UP ARROW</b> or tap top half of screen to jump</span>
+              </p>
+              <p className="flex items-center">
+                <span className="inline-block w-8 h-8 mr-3 bg-pink-100 text-pink-600 font-bold rounded-full flex items-center justify-center">↓</span>
+                <span>Press <b>DOWN ARROW</b> or tap bottom half to duck</span>
+              </p>
+              <p className="flex items-center">
+                <span className="inline-block w-8 h-8 mr-3 bg-pink-100 text-pink-600 font-bold rounded-full flex items-center justify-center">🎯</span>
+                <span>Reach <b>{gameStateRef.current.targetScore} points</b> to win!</span>
+              </p>
+              <p className="flex items-center">
+                <span className="inline-block w-8 h-8 mr-3 bg-pink-100 text-pink-600 font-bold rounded-full flex items-center justify-center">⚠️</span>
+                <span>Watch out for ground and flying monsters!</span>
+              </p>
+            </div>
+            <button
+              onClick={startGame}
+              className="px-6 py-3 bg-pink-500 text-white rounded-xl
+                        border-b-4 border-r-4 border-opacity-50 border-pink-800
+                        hover:translate-y-1 hover:border-b-2 active:translate-y-2 active:border-b-0
+                        font-pixel text-sm transition-all duration-200"
             >
               Start Game
             </button>
           </div>
-        ) : (
-          <canvas 
-            ref={canvasRef} 
-            width={600} 
-            height={450}
-            className="border-4 border-purple-300 rounded-lg mx-auto block shadow-lg"
+        ) : gameOver ? (
+          <div className="text-center bg-white p-6 rounded-lg shadow-lg">
+            <h2 className="text-xl font-bold mb-4 text-red-500 font-pixel">Game Over</h2>
+            <p className="mb-4">You scored {score} points!</p>
+            <div className="flex justify-center space-x-4">
+              <button
+                onClick={restartGame}
+                className="px-6 py-3 bg-pink-500 text-white rounded-xl
+                          border-b-4 border-r-4 border-opacity-50 border-pink-800
+                          hover:translate-y-1 hover:border-b-2 active:translate-y-2 active:border-b-0
+                          font-pixel text-sm transition-all duration-200"
+              >
+                Try Again
+              </button>
+              <button
+                onClick={() => router.push('/hub')}
+                className="px-6 py-3 bg-purple-500 text-white rounded-xl
+                          border-b-4 border-r-4 border-opacity-50 border-purple-800
+                          hover:translate-y-1 hover:border-b-2 active:translate-y-2 active:border-b-0
+                          font-pixel text-sm transition-all duration-200"
+              >
+                Back to Hub
+              </button>
+            </div>
+          </div>
+        ) : gameWon ? (
+          <GameCompletion
+            gameId="heartJump"
+            score={score}
+            scoreLabel="Score"
+            customMessage="Amazing! You reached the target score!"
+            onRestart={restartGame}
           />
+        ) : (
+          <div className="relative bg-white p-1 rounded-lg shadow-lg border-4 border-purple-300">
+            <canvas
+              ref={canvasRef}
+              width={640}
+              height={320}
+              className="w-full h-auto rounded-lg"
+            />
+            <div className="mt-4 flex justify-center space-x-4">
+              <button
+                onClick={() => router.push('/hub')}
+                className="px-4 py-2 bg-purple-400 text-white rounded-lg
+                          hover:bg-purple-500 transition-colors duration-200
+                          font-pixel text-xs"
+              >
+                Back to Hub
+              </button>
+              <button
+                onClick={restartGame}
+                className="px-4 py-2 bg-pink-400 text-white rounded-lg
+                          hover:bg-pink-500 transition-colors duration-200
+                          font-pixel text-xs"
+              >
+                Restart
+              </button>
+            </div>
+          </div>
         )}
-        
-        <div className="flex justify-center mt-4">
-          <Link href="/gaming-hub">
-            <button className="px-4 py-2 bg-purple-400 text-white rounded hover:bg-purple-500 transition duration-200 mr-4">
-              Back to Hub
-            </button>
-          </Link>
-          {!showInstructions && !gameState.isGameWon && !gameState.isGameOver && (
-            <button 
-              onClick={() => {
-                cancelAnimationFrame(frameRef.current);
-                setGameStarted(false);
-                setShowInstructions(true);
-              }}
-              className="px-4 py-2 bg-pink-400 text-white rounded hover:bg-pink-500 transition duration-200"
-            >
-              Restart
-            </button>
-          )}
-        </div>
       </div>
-      
-      <style jsx global>{`
-        @font-face {
-          font-family: 'Press Start 2P';
-          src: url('/fonts/PressStart2P-Regular.ttf') format('truetype');
-          font-weight: normal;
-          font-style: normal;
-        }
-        
-        .pixel-text {
-          font-family: 'Press Start 2P', cursive;
-          letter-spacing: 1px;
-        }
-        
-        .pixel-box {
-          image-rendering: pixelated;
-          box-shadow: 0 0 0 4px #c988d9, 0 0 0 8px #ffa6c9;
-        }
-      `}</style>
     </div>
   );
 }
-
-export default HeartJumpGame;

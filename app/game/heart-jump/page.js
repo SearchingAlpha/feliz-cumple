@@ -1,20 +1,29 @@
-// app/games/heart-jump/page.js
-import { Suspense } from 'react';
-import HeartJumpGameWrapper from '@/components/HeartJumpGameWrapper';
+'use client';
 
-function HeartJumpPage() {
+// app/game/heart-jump/page.js
+import { Suspense } from 'react';
+import dynamic from 'next/dynamic';
+
+// Import the game wrapper component dynamically
+const HeartJumpGameWrapper = dynamic(() => import('@/components/HeartJumpGameWrapper'), {
+  ssr: false,
+  loading: () => <LoadingGame />
+});
+
+// Simple loading component
+function LoadingGame() {
   return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-pink-200 to-purple-200">
-        <div className="text-center p-8 bg-white rounded-lg shadow-lg border-4 border-purple-400">
-          <h2 className="text-2xl font-bold mb-4 text-pink-600">Loading Game...</h2>
-          <div className="w-16 h-16 border-4 border-pink-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-        </div>
-      </div>
-    }>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-pink-200 to-purple-200">
+      <div className="pixel-loading mb-4"></div>
+      <p className="font-pixel text-purple-600">Loading Heart Runner...</p>
+    </div>
+  );
+}
+
+export default function HeartJumpPage() {
+  return (
+    <Suspense fallback={<LoadingGame />}>
       <HeartJumpGameWrapper />
     </Suspense>
   );
 }
-
-export default HeartJumpPage;
