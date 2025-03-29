@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import GameCompletion from '@/components/GameCompletion';
+import GameInstructions from '@/components/GameInstructions';
 import '../app/globals.css';
 
 // Flower colors for the pixel art flowers
@@ -68,23 +69,31 @@ export default function PixelFlowerMatch() {
   const [matchedPairs, setMatchedPairs] = useState([]);
   const [gameCompleted, setGameCompleted] = useState(false);
   const [moves, setMoves] = useState(0);
+  const [gameStarted, setGameStarted] = useState(false);
 
   // Initialize game
-  useEffect(() => {
-    initializeGame();
+  const initializeGame = () => {
+    const shuffledColors = [...FLOWER_COLORS]
+      .sort(() => Math.random() - 0.5);
+    
+    setCards(shuffledColors);
+    setFlippedIndices([]);
+    setMatchedPairs([]);
+    setGameCompleted(false);
+    setMoves(0);
+    setGameStarted(true);
     
     // Check if the game was already completed in localStorage
     try {
       const gameState = JSON.parse(localStorage.getItem('gameState') || '{}');
       if (gameState.flowerMatch) {
-        // If the game is already completed in storage, we'll automatically mark it completed
-        // This way, returning to a completed game shows it as completed
-        setGameCompleted(true);
+        // If the game is already completed in storage, we should still allow the user to play
+        // but don't automatically show completion screen
       }
     } catch (error) {
       console.error("Error checking game completion status:", error);
     }
-  }, []);
+  };
 
   // Check for matches when two cards are flipped
   useEffect(() => {
@@ -111,26 +120,13 @@ export default function PixelFlowerMatch() {
   // Check if game is completed
   useEffect(() => {
     // Only trigger completion logic if all pairs are matched and game isn't already marked as completed
-    if (matchedPairs.length === FLOWER_COLORS.length / 2 && !gameCompleted) {
+    if (matchedPairs.length === FLOWER_COLORS.length / 2 && !gameCompleted && gameStarted) {
       const timer = setTimeout(() => {
         setGameCompleted(true);
-        // Note: saveGameCompletion is now handled by the GameCompletion component
       }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [matchedPairs, gameCompleted]);
-
-  // Initialize game by shuffling colors
-  function initializeGame() {
-    const shuffledColors = [...FLOWER_COLORS]
-      .sort(() => Math.random() - 0.5);
-    
-    setCards(shuffledColors);
-    setFlippedIndices([]);
-    setMatchedPairs([]);
-    setGameCompleted(false);
-    setMoves(0);
-  }
+  }, [matchedPairs, gameCompleted, gameStarted]);
 
   // Handle card click
   function handleCardClick(index) {
@@ -147,9 +143,37 @@ export default function PixelFlowerMatch() {
     setFlippedIndices(prev => [...prev, index]);
   }
 
-  // Note: Game completion is now handled by the GameCompletion component
+  // Define game instructions
+  const instructions = [
+    "Click on cards to flip them",
+    "Find matching pairs of flowers",
+    "Remember the locations to make fewer moves"
+  ];
 
-  // Note: Returning to hub is now handled by the GameCompletion component
+  // If game hasn't started yet, show instructions
+  if (!gameStarted) {
+    return (
+      <GameInstructions
+        title="Pixel Flower Match"
+        instructions={instructions}
+        goal="Find all matching flower pairs in as few moves as possible!"
+        onStart={initializeGame}
+      />
+    );
+  }
+  
+  // If game is completed, show completion screen
+  if (gameCompleted) {
+    return (
+      <GameCompletion
+        gameId="flowerMatch"
+        score={moves}
+        scoreLabel="Moves"
+        customMessage="Great job! You found all the matching flowers!"
+        onRestart={initializeGame}
+      />
+    );
+  }
 
   // Add some celebratory particles when the game is completed
   function CelebrationEffect() {
@@ -182,27 +206,17 @@ export default function PixelFlowerMatch() {
           <p className="text-pink-500 mb-4">Moves: {moves}</p>
         </div>
 
-        {gameCompleted ? (
-          <GameCompletion
-            gameId="flowerMatch"
-            score={moves}
-            scoreLabel="Moves"
-            customMessage="Great job! You found all the matching flowers!"
-            onRestart={initializeGame}
-          />
-        ) : (
-          <div className="grid grid-cols-3 md:grid-cols-4 gap-2 bg-white p-4 rounded-lg shadow-lg">
-            {cards.map((color, index) => (
-              <div key={index} className="aspect-square border-2 border-pink-300 rounded-lg overflow-hidden">
-                <PixelFlower 
-                  color={color}
-                  isFlipped={flippedIndices.includes(index) || matchedPairs.includes(color)}
-                  onClick={() => handleCardClick(index)}
-                />
-              </div>
-            ))}
-          </div>
-        )}
+        <div className="grid grid-cols-3 md:grid-cols-4 gap-2 bg-white p-4 rounded-lg shadow-lg">
+          {cards.map((color, index) => (
+            <div key={index} className="aspect-square border-2 border-pink-300 rounded-lg overflow-hidden">
+              <PixelFlower 
+                color={color}
+                isFlipped={flippedIndices.includes(index) || matchedPairs.includes(color)}
+                onClick={() => handleCardClick(index)}
+              />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

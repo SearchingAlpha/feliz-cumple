@@ -374,12 +374,6 @@ export default function HeartJump() {
       speedRef.current += 0.2;
     }
     
-    // Draw UI in pixel style
-    ctx.fillStyle = colors.black;
-    ctx.font = '20px "Press Start 2P", cursive, monospace';
-    ctx.fillText(`Score: ${scoreRef.current}`, canvas.width - 200, 30);
-    ctx.fillText(`Hearts: ${heartsCollectedRef.current}/${HEARTS_TO_WIN}`, canvas.width - 200, 60);
-    
     // Continue game loop
     if (gameState === 'playing') {
       frameIdRef.current = requestAnimationFrame(gameLoop);
@@ -484,11 +478,15 @@ export default function HeartJump() {
   // Game is in progress
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-pink-200 to-purple-200 p-4">
-      <div className="text-center mb-4">
-        <h1 className="text-3xl font-pixel text-pink-600 mb-2">Heart Jump</h1>
-        <div className="flex justify-between px-4 w-full max-w-2xl">
-          <p className="font-pixel text-purple-700">Score: {score}</p>
-          <p className="font-pixel text-purple-700">Hearts: {heartsCollected}/{HEARTS_TO_WIN}</p>
+      <div className="text-center mb-6">
+        <h1 className="text-3xl font-pixel text-pink-600 mb-4">Heart Jump</h1>
+        <div className="flex justify-center gap-12 px-4 w-full max-w-2xl">
+          <div className="bg-white px-4 py-2 rounded-lg border-2 border-pink-400">
+            <p className="font-pixel text-purple-700">Score: {score}</p>
+          </div>
+          <div className="bg-white px-4 py-2 rounded-lg border-2 border-pink-400">
+            <p className="font-pixel text-purple-700">Hearts: {heartsCollected}/{HEARTS_TO_WIN}</p>
+          </div>
         </div>
       </div>
       
