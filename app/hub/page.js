@@ -41,6 +41,8 @@ function EnsureStorage() {
         console.log("Found backup game state, restoring");
         localStorage.setItem('gameState', backupState);
         localStorage.setItem('gameStateUpdated', 'true');
+        // Clear the backup to avoid repeated restorations
+        sessionStorage.removeItem('gameStateBackup');
       }
     } catch (error) {
       console.error("Error initializing storage:", error);
@@ -103,10 +105,20 @@ function AuthCheck({ children }) {
     }
   }, [router]);
   
-  // Function to show the reward
+// Function to show the reward
   const handleShowReward = () => {
-    setShowReward(true);
+  console.log("Showing reward triggered from hub page");
+  setShowReward(true);
+  
+  // Also set up a listener to reset the reward state when modal is closed
+  const handleModalClosed = () => {
+    console.log("Modal closed, resetting showReward state");
+    setShowReward(false);
+    window.removeEventListener('modalClosed', handleModalClosed);
   };
+  
+  window.addEventListener('modalClosed', handleModalClosed);
+};
   
   // Return a loading state while checking auth
   if (checking) {
@@ -117,7 +129,7 @@ function AuthCheck({ children }) {
   return authenticated ? (
     <>
       <GamingHub onShowReward={handleShowReward} />
-      <CompletionReward gameState={gameState} showManually={showReward} />
+      {gameState && <CompletionReward gameState={gameState} showManually={showReward} />}
     </>
   ) : <Loading />;
 }

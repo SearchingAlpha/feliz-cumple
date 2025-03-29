@@ -114,51 +114,69 @@ const GamingHub = ({ onShowReward }) => {
 
   // Calculate if all games are completed
   const allGamesCompleted = 
-    gameState.flowerMatch && 
-    gameState.cupcakeCatch && 
-    gameState.heartJump;
+    gameState.flowerMatch === true && 
+    gameState.cupcakeCatch === true && 
+    gameState.heartJump === true;
 
-  // Simplified game state loading with the utility function
-  useEffect(() => {
-    // Function to load game state
-    function loadGameState() {
-      const state = getGameState();
-      console.log("Loading game state:", state);
-      setGameState(state);
+// Simplified game state loading with the utility function
+useEffect(() => {
+  // Function to load game state
+  function loadGameState() {
+    const state = getGameState();
+    console.log("Loading game state:", state);
+    setGameState(state);
+  }
+  
+  // Load game state initially
+  loadGameState();
+  
+  // Set up event listeners
+  function handleVisibilityChange() {
+    if (document.visibilityState === 'visible') {
+      console.log("Page became visible, reloading game state");
+      loadGameState();
     }
-    
-    // Load game state initially
+  }
+  
+  function handleStorageChange(event) {
+    if (event.key === 'gameState' || event.key === 'forceRefresh') {
+      console.log("Storage changed, reloading game state");
+      loadGameState();
+    }
+  }
+  
+  // Listen for the modalClosed event to refresh the UI
+  function handleModalClosed() {
+    console.log("Modal closed event detected, refreshing UI");
     loadGameState();
     
-    // Set up event listeners
-    function handleVisibilityChange() {
-      if (document.visibilityState === 'visible') {
-        console.log("Page became visible, reloading game state");
-        loadGameState();
-      }
-    }
-    
-    function handleStorageChange(event) {
-      if (event.key === 'gameState' || event.key === 'forceRefresh') {
-        console.log("Storage changed, reloading game state");
-        loadGameState();
-      }
-    }
-    
-    // Add event listeners
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('storage', handleStorageChange);
-    
-    // Also set up an interval to periodically check for changes
-    const intervalId = setInterval(loadGameState, 1000);
-    
-    // Clean up
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('storage', handleStorageChange);
-      clearInterval(intervalId);
-    };
-  }, []);
+    // Force a small delay to ensure DOM is updated
+    setTimeout(() => {
+      const event = new MouseEvent('mousemove', {
+        view: window,
+        bubbles: true,
+        cancelable: true
+      });
+      document.dispatchEvent(event);
+    }, 100);
+  }
+  
+  // Add event listeners
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  window.addEventListener('storage', handleStorageChange);
+  window.addEventListener('modalClosed', handleModalClosed);
+  
+  // Also set up an interval to periodically check for changes
+  const intervalId = setInterval(loadGameState, 1000);
+  
+  // Clean up
+  return () => {
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+    window.removeEventListener('storage', handleStorageChange);
+    window.removeEventListener('modalClosed', handleModalClosed);
+    clearInterval(intervalId);
+  };
+}, []);
 
   // Function to navigate to a game
   const navigateToGame = (game) => {
@@ -170,8 +188,14 @@ const GamingHub = ({ onShowReward }) => {
       if (authState) {
         sessionStorage.setItem('tempAuthState', authState);
       }
+      
+      // Also preserve current game state in session storage
+      const currentGameState = localStorage.getItem('gameState');
+      if (currentGameState) {
+        sessionStorage.setItem('gameStateBackup', currentGameState);
+      }
     } catch (error) {
-      console.error("Error preserving auth state:", error);
+      console.error("Error preserving state:", error);
     }
     
     // Navigate to the appropriate game route
@@ -306,7 +330,10 @@ const GamingHub = ({ onShowReward }) => {
           {allGamesCompleted && (
             <div className="mt-6">
               <button
-                onClick={onShowReward}
+                onClick={() => {
+                  console.log("Reward button clicked, all completed:", allGamesCompleted);
+                  onShowReward();
+                }}
                 className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl 
                         border-b-4 border-r-4 border-opacity-50 border-black
                         hover:translate-y-1 hover:border-b-2 active:translate-y-2 active:border-b-0
