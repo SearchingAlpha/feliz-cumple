@@ -160,9 +160,9 @@ export default function CupcakeCatch() {
 
   // Define game instructions  
   const instructions = [
-    "Use arrow keys or mouse to move basket",
-    "Catch falling cupcakes to earn points",
-    "Avoid bombs - they reduce your score by 2 points!"
+    "Usa las flechas o el ratón para mover la cesta",
+    "Recoge cupcakes para sumar puntos",
+    "Evita las bombas que restan -2 puntos!"
   ];
   
   // If game hasn't started, show instructions
@@ -184,7 +184,7 @@ export default function CupcakeCatch() {
         gameId="cupcakeCatch"
         score={score}
         scoreLabel="Score"
-        customMessage="Sweet! You caught enough cupcakes!"
+        customMessage="Increíble! Has atrapado muchos cupcakes!"
         onRestart={startGame}
       />
     );
@@ -210,7 +210,7 @@ export default function CupcakeCatch() {
         >
           {/* Instructions */}
           <div className="absolute top-2 left-0 right-0 text-center text-purple-400 font-pixel text-xs">
-            Use arrow keys or mouse to move basket
+            Usa las flechas o el ratón para mover la cesta
           </div>
           
           {/* Render falling items */}

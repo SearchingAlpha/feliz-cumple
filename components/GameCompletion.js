@@ -46,7 +46,7 @@ export default function GameCompletion({
   };
 
   // Default victory message
-  const defaultMessage = "Congratulations! You've completed the game!";
+  const defaultMessage = "Felicidades! Has completado el juego!";
   
   return (
     <div className="text-center bg-white p-6 rounded-lg shadow-lg border-4 border-pink-300 animate-fadeIn">
@@ -117,7 +117,7 @@ export default function GameCompletion({
                     font-pixel text-sm transition-all duration-200"
           disabled={isSaving}
         >
-          {isSaving ? 'Saving...' : 'Mark as Completed'}
+          {isSaving ? 'Saving...' : 'Marcar como completado'}
         </button>
       </div>
     </div>

@@ -13,7 +13,7 @@
 export default function GameInstructions({ 
   title, 
   instructions = [], 
-  goal = "Complete the game to win!",
+  goal = "Completa el juego para ganar!",
   onStart 
 }) {
   return (

@@ -66,7 +66,7 @@ const PresentBox = ({ unlocked, title, content }) => {
           className={`${unlocked ? 'text-pink-500' : 'text-gray-500'} ${isOpen && unlocked ? 'animate-bounce' : ''}`} 
         />
         <h3 className={`font-pixel text-lg ${unlocked ? 'text-pink-600' : 'text-gray-500'}`}>
-          {unlocked ? title : "Locked Present"}
+          {unlocked ? title : "Regalo bloqueado"}
         </h3>
       </div>
       
@@ -83,11 +83,11 @@ const PresentBox = ({ unlocked, title, content }) => {
       )}
       
       {unlocked && !isOpen && (
-        <p className="text-xs text-pink-400 font-pixel">Click to open!</p>
+        <p className="text-xs text-pink-400 font-pixel">Haz clic para abrir</p>
       )}
       
       {!unlocked && (
-        <p className="text-xs text-gray-500 font-pixel">Complete a game to unlock!</p>
+        <p className="text-xs text-gray-500 font-pixel">Completa el juego para desbloquear!</p>
       )}
     </div>
   );
@@ -189,7 +189,7 @@ const GamingHub = () => {
   
   // Function to reset a game's completion status
   const resetGameHandler = (game) => {
-    if (window.confirm(`Are you sure you want to reset the ${game} game?`)) {
+    if (window.confirm(`Estás seguro que quieres reiniciar el progreso de ${game}?`)) {
       resetGame(game);
       // Update the local state immediately for UI responsiveness
       setGameState(prev => ({
@@ -201,7 +201,7 @@ const GamingHub = () => {
 
   // Function to reset all games
   const resetAllGamesHandler = () => {
-    if (window.confirm('Are you sure you want to reset all game progress?')) {
+    if (window.confirm('Estás seguro que quieres reiniciar el progreso de todos los juegos?')) {
       resetAllGames();
       // Update the local state
       setGameState({
@@ -262,9 +262,9 @@ const GamingHub = () => {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-pixel text-purple-700 mb-4 tracking-wide drop-shadow-[0_2px_0_rgba(255,105,180,0.7)]">
-            Retro Gaming Hub
+            Portal a tu Mundo de Juegos
           </h1>
-          <p className="font-pixel text-pink-600 text-lg">Your special adventure awaits!</p>
+          <p className="font-pixel text-pink-600 text-lg">Te espera una aventura!</p>
           
           <div className="flex justify-center mt-4">
             {completedGames > 0 && (
@@ -273,7 +273,7 @@ const GamingHub = () => {
                 color="bg-pink-700"
                 size="small"
               >
-                Reset All Progress
+                Reiniciar los progresos
               </PixelButton>
             )}
           </div>
@@ -303,7 +303,7 @@ const GamingHub = () => {
           <div className="md:col-span-2 bg-white rounded-xl p-6 shadow-lg border-4 border-purple-300">
             <h2 className="text-2xl font-pixel text-purple-600 mb-6 flex items-center">
               <Heart size={24} className="mr-2 text-pink-500" /> 
-              Choose a Game
+              Elige un juego
             </h2>
             
             <div className="grid grid-cols-1 gap-4">
@@ -316,7 +316,7 @@ const GamingHub = () => {
                     </div>
                     <div>
                       <h3 className="font-pixel text-xl text-pink-600">Pixel Flower Match</h3>
-                      <p className="text-sm text-pink-500">Memory game with pixelated flowers</p>
+                      <p className="text-sm text-pink-500">Juego de memorizar</p>
                     </div>
                   </div>
                   <div className="flex flex-col md:flex-row gap-2">
@@ -349,7 +349,7 @@ const GamingHub = () => {
                     </div>
                     <div>
                       <h3 className="font-pixel text-xl text-purple-600">Cupcake Catch</h3>
-                      <p className="text-sm text-purple-500">Catch falling treats, avoid bombs</p>
+                      <p className="text-sm text-purple-500">Recoge cupcakes y evita las bombas</p>
                     </div>
                   </div>
                   <div className="flex flex-col md:flex-row gap-2">
@@ -382,7 +382,7 @@ const GamingHub = () => {
                     </div>
                     <div>
                       <h3 className="font-pixel text-xl text-red-500">Heart Jump</h3>
-                      <p className="text-sm text-red-400">Platform game to collect hearts</p>
+                      <p className="text-sm text-red-400">Esquiva los obstáculos y recoge corazones</p>
                     </div>
                   </div>
                   <div className="flex flex-col md:flex-row gap-2">
@@ -412,26 +412,26 @@ const GamingHub = () => {
           <div className="bg-white rounded-xl p-6 shadow-lg border-4 border-pink-300">
             <h2 className="text-2xl font-pixel text-pink-600 mb-6 flex items-center">
               <Gift size={24} className="mr-2 text-pink-500" /> 
-              Your Presents
+              Tus regalos
             </h2>
             
             <div className="space-y-4">
               <PresentBox 
                 unlocked={gameState.flowerMatch}
-                title="Special Message"
-                content="You're the most beautiful flower in my garden! I love you more each day. ♥"
+                title="Cupón de Princesa"
+                content="Cupón para un día de Princess Treatment a otro nivel. Cocinaré una cena romática, masajes, you name it... ♥"
               />
               
               <PresentBox 
                 unlocked={gameState.cupcakeCatch}
-                title="Date Coupon"
-                content="Redeem for one fancy dinner date of your choice! I'll take you anywhere you want to go."
+                title="Cupón de Cena"
+                content="Cupón para una cena romántica! Me encantó el último restaurante que visitamos juntos."
               />
               
               <PresentBox 
                 unlocked={gameState.heartJump}
-                title="Sweet Surprise"
-                content="Check under your pillow tonight for a special surprise I've hidden for you!"
+                title="Cupón de un Viaje"
+                content="Cupón para un viaje a París! Será la siguiente capital que visitemos juntos."
               />
             </div>
           </div>
@@ -441,11 +441,11 @@ const GamingHub = () => {
       {/* Footer */}
       <div className="mt-12 py-4 text-center font-pixel text-sm text-pink-500">
         <span className="relative">
-          Made with 
+          Hecho con 
           <svg className="inline-block w-4 h-4 mx-1 text-pink-500 animate-pulse" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
           </svg>
-          just for you!
+          solo para ti!
         </span>
       </div>
     </div>

@@ -56,8 +56,8 @@ export default function LandingPage() {
       
       <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-pink-600 mb-4 font-pixel">Retro Gaming Hub</h1>
-          <p className="text-pink-500 mb-2 font-pixel">Welcome to your special place!</p>
+          <h1 className="text-3xl font-bold text-pink-600 mb-4 font-pixel">Felicidades mi Amooor 03/04/2025</h1>
+          <p className="text-pink-500 mb-2 font-pixel">Descubre las sorpresas que te esperan!</p>
         </div>
 
         {/* Pixelated Login Box */}
@@ -67,7 +67,7 @@ export default function LandingPage() {
           <form onSubmit={handleLogin}>
             <div className="mb-4">
               <label className="block text-pink-500 mb-2 text-sm font-pixel" htmlFor="username">
-                Your Name
+                Nombre
               </label>
               <input
                 id="username"
@@ -75,14 +75,14 @@ export default function LandingPage() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full px-3 py-2 border-2 border-pink-300 rounded-md focus:outline-none focus:border-pink-500"
-                placeholder="Enter your name"
+                placeholder="Introduce tu nombre"
                 required
               />
             </div>
             
             <div className="mb-6">
               <label className="block text-pink-500 mb-2 text-sm font-pixel" htmlFor="password">
-                Special Date
+                Contraseña
               </label>
               <input
                 id="password"
@@ -90,7 +90,7 @@ export default function LandingPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-3 py-2 border-2 border-pink-300 rounded-md focus:outline-none focus:border-pink-500"
-                placeholder="Enter our special date"
+                placeholder="Fecha especial DDMMYYYY"
                 required
               />
             </div>
@@ -106,7 +106,7 @@ export default function LandingPage() {
               disabled={isLoading}
               className="w-full py-2 px-4 bg-pink-500 text-white rounded-md hover:bg-pink-600 focus:outline-none focus:ring focus:ring-pink-300 disabled:opacity-70 font-pixel text-sm"
             >
-              {isLoading ? 'Loading...' : 'Enter Hub'}
+              {isLoading ? 'Loading...' : 'Descúbrelo!'}
             </button>
           </form>
         </div>
