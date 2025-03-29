@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import GamingHub from '@/components/GamingHub';
+import CompletionReward from '@/components/CompletionReward';
 
 // Loading component
 function Loading() {
@@ -54,6 +55,8 @@ function AuthCheck({ children }) {
   const router = useRouter();
   const [authenticated, setAuthenticated] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [gameState, setGameState] = useState(null);
+  const [showReward, setShowReward] = useState(false);
   
   useEffect(() => {
     // Check if user is authenticated
@@ -74,6 +77,14 @@ function AuthCheck({ children }) {
       if (isAuthenticated === 'true') {
         console.log("Authentication confirmed in hub");
         setAuthenticated(true);
+        
+        // Get game state
+        try {
+          const state = JSON.parse(localStorage.getItem('gameState'));
+          setGameState(state);
+        } catch (e) {
+          console.error("Error parsing game state:", e);
+        }
       } else {
         console.log("Not authenticated, will redirect to landing page");
         // Use a timeout to ensure we don't redirect during render
@@ -92,13 +103,23 @@ function AuthCheck({ children }) {
     }
   }, [router]);
   
+  // Function to show the reward
+  const handleShowReward = () => {
+    setShowReward(true);
+  };
+  
   // Return a loading state while checking auth
   if (checking) {
     return <Loading />;
   }
   
   // Only render children if authenticated
-  return authenticated ? children : <Loading />;
+  return authenticated ? (
+    <>
+      <GamingHub onShowReward={handleShowReward} />
+      <CompletionReward gameState={gameState} showManually={showReward} />
+    </>
+  ) : <Loading />;
 }
 
 // Then modify your HubPage function to include EnsureStorage:
@@ -106,7 +127,6 @@ export default function HubPage() {
   return (
     <AuthCheck>
       <EnsureStorage />
-      <GamingHub />
     </AuthCheck>
   );
 }

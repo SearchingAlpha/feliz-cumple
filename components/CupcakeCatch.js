@@ -171,7 +171,7 @@ export default function CupcakeCatch() {
       <GameInstructions
         title="Cupcake Catch"
         instructions={instructions}
-        goal="Catch at least 15 cupcakes in 30 seconds to win!"
+        goal="Consigue 15 cupcakes en menos de 30 segundos para ganar!"
         onStart={startGame}
       />
     );

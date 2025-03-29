@@ -156,7 +156,7 @@ export default function PixelFlowerMatch() {
       <GameInstructions
         title="Pixel Flower Match"
         instructions={instructions}
-        goal="Find all matching flower pairs in as few moves as possible!"
+        goal="Encuentra todas las parejas de flores en el menor número de movimientos!"
         onStart={initializeGame}
       />
     );

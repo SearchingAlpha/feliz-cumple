@@ -102,7 +102,7 @@ const PixelStar = ({ size = 12, color = "bg-yellow-300" }) => (
   <div className={`${size} ${color} pixel-star animate-spin-slow`}></div>
 );
 
-const GamingHub = () => {
+const GamingHub = ({ onShowReward }) => {
   const router = useRouter(); // For navigation
   
   // Game state
@@ -111,6 +111,12 @@ const GamingHub = () => {
     cupcakeCatch: false,
     heartJump: false
   });
+
+  // Calculate if all games are completed
+  const allGamesCompleted = 
+    gameState.flowerMatch && 
+    gameState.cupcakeCatch && 
+    gameState.heartJump;
 
   // Simplified game state loading with the utility function
   useEffect(() => {
@@ -295,6 +301,25 @@ const GamingHub = () => {
               <span className="absolute">{completedGames}/{totalGames}</span>
             </div>
           </div>
+          
+          {/* Reward Button - Only show when all games are completed */}
+          {allGamesCompleted && (
+            <div className="mt-6">
+              <button
+                onClick={onShowReward}
+                className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl 
+                        border-b-4 border-r-4 border-opacity-50 border-black
+                        hover:translate-y-1 hover:border-b-2 active:translate-y-2 active:border-b-0
+                        font-pixel text-sm transition-all duration-200 animate-pulse"
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <Trophy size={18} className="text-yellow-300" />
+                  <span>Ver Recompensa Especial</span>
+                  <Heart size={16} className="text-pink-300" fill="currentColor" />
+                </div>
+              </button>
+            </div>
+          )}
         </div>
         
         {/* Main content */}
@@ -309,7 +334,7 @@ const GamingHub = () => {
             <div className="grid grid-cols-1 gap-4">
               {/* Game 1 - Pixel Flower Match (implemented) */}
               <div className="p-4 bg-pink-50 rounded-lg border-2 border-pink-200">
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center flex-wrap md:flex-nowrap">
                   <div className="flex items-center">
                     <div className="bg-pink-400 w-12 h-12 rounded-lg flex items-center justify-center mr-4">
                       <div className="pixel-flower w-8 h-8"></div>
@@ -319,7 +344,7 @@ const GamingHub = () => {
                       <p className="text-sm text-pink-500">Juego de memorizar</p>
                     </div>
                   </div>
-                  <div className="flex flex-col md:flex-row gap-2">
+                  <div className="flex flex-col md:flex-row gap-2 mt-4 md:mt-0">
                     {gameState.flowerMatch && (
                       <PixelButton 
                         onClick={() => resetGameHandler('flowerMatch')}
@@ -342,7 +367,7 @@ const GamingHub = () => {
               
               {/* Game 2 - Cupcake Catch (placeholder) */}
               <div className="p-4 bg-purple-50 rounded-lg border-2 border-purple-200">
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center flex-wrap md:flex-nowrap">
                   <div className="flex items-center">
                     <div className="bg-purple-400 w-12 h-12 rounded-lg flex items-center justify-center mr-4">
                       <div className="pixel-cupcake w-8 h-8"></div>
@@ -352,7 +377,7 @@ const GamingHub = () => {
                       <p className="text-sm text-purple-500">Recoge cupcakes y evita las bombas</p>
                     </div>
                   </div>
-                  <div className="flex flex-col md:flex-row gap-2">
+                  <div className="flex flex-col md:flex-row gap-2 mt-4 md:mt-0">
                     {gameState.cupcakeCatch && (
                       <PixelButton 
                         onClick={() => resetGameHandler('cupcakeCatch')}
@@ -375,7 +400,7 @@ const GamingHub = () => {
               
               {/* Game 3 - Heart Jump (placeholder) */}
               <div className="p-4 bg-red-50 rounded-lg border-2 border-red-200">
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center flex-wrap md:flex-nowrap">
                   <div className="flex items-center">
                     <div className="bg-red-400 w-12 h-12 rounded-lg flex items-center justify-center mr-4">
                       <div className="pixel-heart w-8 h-8"></div>
@@ -385,7 +410,7 @@ const GamingHub = () => {
                       <p className="text-sm text-red-400">Esquiva los obstáculos y recoge corazones</p>
                     </div>
                   </div>
-                  <div className="flex flex-col md:flex-row gap-2">
+                  <div className="flex flex-col md:flex-row gap-2 mt-4 md:mt-0">
                     {gameState.heartJump && (
                       <PixelButton 
                         onClick={() => resetGameHandler('heartJump')}

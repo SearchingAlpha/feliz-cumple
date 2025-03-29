@@ -424,7 +424,7 @@ export default function HeartJump() {
       <GameInstructions
         title="Heart Jump"
         instructions={instructions}
-        goal={`Collect ${HEARTS_TO_WIN} hearts to unlock a special present!`}
+        goal={`Consigue ${HEARTS_TO_WIN} para desbloquear tu regalo!`}
         onStart={resetGame}
       />
     );
