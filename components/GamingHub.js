@@ -243,8 +243,8 @@ useEffect(() => {
   };
 
   // Calculate total progress
-  const completedGames = Object.values(gameState).filter(Boolean).length -1;
-  const totalGames = Object.keys(gameState).length -1;
+  const completedGames = Object.values(gameState).filter(Boolean).length;
+  const totalGames = Object.keys(gameState).length;
   const progressPercentage = (completedGames / totalGames) * 100;
 
   return (
