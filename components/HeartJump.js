@@ -412,10 +412,9 @@ export default function HeartJump() {
 
   // Define game instructions
   const instructions = [
-    "Press SPACE or UP arrow key to jump",
-    "Tap the screen to jump (on mobile)",
-    "Avoid obstacles and collect hearts",
-    "Collect 15 hearts to unlock your present!"
+    "Pulsa ESPACIO o la tecla ARRIBA para saltar",
+    "Esquiva los obstáculos y recoge corazones",
+    "Recoge 15 corazones para ganar el juego",
   ];
 
   // If game hasn't started yet, show instructions

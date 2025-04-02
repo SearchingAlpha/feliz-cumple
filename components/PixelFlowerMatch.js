@@ -145,9 +145,9 @@ export default function PixelFlowerMatch() {
 
   // Define game instructions
   const instructions = [
-    "Click on cards to flip them",
-    "Find matching pairs of flowers",
-    "Remember the locations to make fewer moves"
+    "Pulsa en las flores para girarlas y ver su color",
+    "Encuentra todas las parejas de flores",
+    "Recuerda que cada movimiento cuenta!",
   ];
 
   // If game hasn't started yet, show instructions
